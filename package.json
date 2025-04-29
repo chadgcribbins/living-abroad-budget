@@ -1,0 +1,15 @@
+{
+  "name": "living-abroad-budget",
+  "type": "module",
+  "scripts": {
+    "setup-docs": "node scripts/setup-docs.js",
+    "update-todos": "node scripts/update-todos.js",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "fast-glob": "^3.3.3",
+    "vitepress": "^1.6.3"
+  }
+}

@@ -1,0 +1,331 @@
+{
+  "meta": {
+    "generatedAt": "2025-04-27T22:11:31.706Z",
+    "tasksAnalyzed": 40,
+    "thresholdScore": 5,
+    "projectName": "Your Project Name",
+    "usedResearch": true
+  },
+  "complexityAnalysis": [
+    {
+      "taskId": 1,
+      "taskTitle": "Initialize Next.js project with TypeScript",
+      "complexityScore": 3,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the process of initializing a Next.js project with TypeScript into specific steps including project creation, TypeScript configuration, folder structure setup, and Git initialization.",
+      "reasoning": "This is a relatively straightforward task with clear steps for project initialization. The complexity is low as it involves standard commands and configurations, but it requires attention to detail for proper folder structure and TypeScript configuration."
+    },
+    {
+      "taskId": 2,
+      "taskTitle": "Configure TailwindCSS and DaisyUI",
+      "complexityScore": 3,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Detail the specific steps to install and configure TailwindCSS with DaisyUI, including package installation, configuration file setup, theme configuration, and CSS base file creation.",
+      "reasoning": "This task involves standard package installation and configuration. The complexity is moderate due to the need to properly configure theme support and ensure all paths are correctly set up in the configuration files."
+    },
+    {
+      "taskId": 3,
+      "taskTitle": "Set up linting and code formatting",
+      "complexityScore": 4,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the process of setting up ESLint and Prettier for a Next.js TypeScript project, including installation, configuration file creation, rule setup, script addition, and editor integration.",
+      "reasoning": "This task requires configuring multiple tools to work together harmoniously. The complexity comes from ensuring ESLint and Prettier don't conflict, setting up appropriate rules for Next.js and TypeScript, and configuring editor integration."
+    },
+    {
+      "taskId": 4,
+      "taskTitle": "Configure testing framework",
+      "complexityScore": 5,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Detail the steps to set up Jest and React Testing Library for a Next.js TypeScript project, including installation, configuration, test utility creation, mock setup, and verification testing.",
+      "reasoning": "Setting up testing frameworks involves more complexity due to the need to configure Jest for Next.js and TypeScript compatibility, create proper test utilities and mocks, and ensure the setup works correctly with a verification test."
+    },
+    {
+      "taskId": 5,
+      "taskTitle": "Set up GitHub Actions CI/CD",
+      "complexityScore": 5,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the process of setting up GitHub Actions for CI/CD, including workflow directory creation, YAML configuration for linting and testing, Vercel deployment integration, and README badge addition.",
+      "reasoning": "This task requires knowledge of GitHub Actions workflow syntax and integration with multiple processes (linting, testing, deployment). The complexity comes from ensuring all steps work together correctly in the CI/CD pipeline."
+    },
+    {
+      "taskId": 6,
+      "taskTitle": "Define core data models and types",
+      "complexityScore": 7,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Break down the process of creating TypeScript interfaces for all financial scenario components, including household data, income sources, expense categories, and utility types for forms and validation.",
+      "reasoning": "This task has higher complexity as it requires designing a comprehensive type system that accurately models all aspects of the financial planning tool. It requires deep understanding of the domain and careful consideration of relationships between different data structures."
+    },
+    {
+      "taskId": 7,
+      "taskTitle": "Implement Zustand store architecture",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Detail the steps to implement a modular Zustand store architecture, including installation, store creation, middleware setup, slice pattern implementation, and provider component if needed.",
+      "reasoning": "Setting up the state management architecture requires careful planning to ensure a maintainable and scalable structure. The complexity comes from implementing the modular slice pattern and configuring middleware for development tools and persistence."
+    },
+    {
+      "taskId": 8,
+      "taskTitle": "Implement profile slice for Zustand store",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the implementation of the profile slice for Zustand, including state definition, action creation for updating fields, selector implementation, and integration with the main store.",
+      "reasoning": "This task involves implementing a specific store slice with moderate complexity. The profile slice contains several related pieces of state that need proper actions and selectors, but follows a standard pattern established in the store architecture."
+    },
+    {
+      "taskId": 9,
+      "taskTitle": "Implement income slice for Zustand store",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Detail the steps to implement the income slice for Zustand, including state structure for different income types, CRUD actions, calculation selectors, and integration with the main store.",
+      "reasoning": "The income slice has higher complexity than the profile slice due to the need to manage collections of income sources with different types (employment, passive, one-off) and implement more complex calculations for total income."
+    },
+    {
+      "taskId": 10,
+      "taskTitle": "Implement housing slice for Zustand store",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the implementation of the housing slice for Zustand, including state for rent/buy scenarios, mortgage details, expense tracking, action creation, and cost calculation selectors.",
+      "reasoning": "The housing slice has significant complexity due to the conditional nature of the data (rent vs. buy paths) and the need to handle mortgage calculations. It requires careful state design to accommodate both scenarios."
+    },
+    {
+      "taskId": 11,
+      "taskTitle": "Implement transport slice for Zustand store",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Detail the steps to implement the transport slice for Zustand, including state for vehicle and public transport costs, actions for updates, calculation selectors, and store integration.",
+      "reasoning": "The transport slice has moderate complexity with a mix of vehicle ownership and public transport expenses. It follows the established pattern but requires handling multiple expense categories and calculations."
+    },
+    {
+      "taskId": 12,
+      "taskTitle": "Implement utilities slice for Zustand store",
+      "complexityScore": 4,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the implementation of the utilities slice for Zustand, including state for various utility expenses, update actions, total calculation selectors, and store integration.",
+      "reasoning": "The utilities slice is relatively straightforward, managing a collection of related monthly expenses. It follows the established pattern with standard actions and simple calculation selectors."
+    },
+    {
+      "taskId": 13,
+      "taskTitle": "Implement healthcare slice for Zustand store",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Detail the steps to implement the healthcare slice for Zustand, including state for healthcare type and expenses, conditional logic based on type, update actions, and cost calculation selectors.",
+      "reasoning": "The healthcare slice has moderate complexity due to the conditional nature of the data based on healthcare type (public/private/hybrid) and the need to handle different expense categories accordingly."
+    },
+    {
+      "taskId": 14,
+      "taskTitle": "Implement lifestyle slice for Zustand store",
+      "complexityScore": 4,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the implementation of the lifestyle slice for Zustand, including state for discretionary spending categories, update actions, total calculation selectors, and store integration.",
+      "reasoning": "The lifestyle slice is relatively straightforward, managing a collection of discretionary expense categories. It follows the established pattern with standard actions and simple calculation selectors."
+    },
+    {
+      "taskId": 15,
+      "taskTitle": "Implement education slice for Zustand store",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Detail the steps to implement the education slice for Zustand, including state for school-related expenses, conditional logic based on school type, update actions, and cost calculation selectors.",
+      "reasoning": "The education slice has moderate complexity due to the conditional nature of expenses based on school type and the need to handle various education-related expense categories."
+    },
+    {
+      "taskId": 16,
+      "taskTitle": "Implement emergency slice for Zustand store",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the implementation of the emergency slice for Zustand, including state for buffer targets and reserves, update actions, runway calculation logic, and integration with other slices for expense data.",
+      "reasoning": "The emergency slice has moderate complexity due to the runway calculations that depend on data from other slices. It requires careful implementation of selectors that can access total expense data."
+    },
+    {
+      "taskId": 17,
+      "taskTitle": "Implement FX slice for Zustand store",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Detail the steps to implement the FX slice for Zustand, including state for exchange rates and sensitivity parameters, update actions, currency conversion selectors, and sensitivity analysis calculations.",
+      "reasoning": "The FX slice has higher complexity due to the need to implement currency conversion logic and sensitivity analysis calculations. It requires careful implementation of selectors that can be used across the application for consistent currency handling."
+    },
+    {
+      "taskId": 18,
+      "taskTitle": "Implement summary slice for Zustand store",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Break down the implementation of the summary slice for Zustand, including selectors for aggregating data from all slices, disposable income calculations, expense totals, emergency runway, and dual-currency display logic.",
+      "reasoning": "The summary slice has high complexity as it needs to aggregate and calculate data from all other slices. It requires careful implementation of selectors that can access and combine data from multiple sources while handling currency conversions."
+    },
+    {
+      "taskId": 19,
+      "taskTitle": "Implement wizard slice for Zustand store",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Detail the steps to implement the wizard slice for Zustand, including state for tracking current step and progress, navigation actions, completion tracking, and validation status management.",
+      "reasoning": "The wizard slice has moderate complexity focused on managing the wizard navigation state and progress tracking. It requires coordination with validation logic but follows a standard pattern for wizard interfaces."
+    },
+    {
+      "taskId": 20,
+      "taskTitle": "Implement localStorage persistence layer",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the implementation of the localStorage persistence layer, including save/load functions, schema versioning, Zustand middleware integration, and migration functions for schema changes.",
+      "reasoning": "This task has higher complexity due to the need to handle schema versioning and migrations for safe upgrades. It requires careful implementation of persistence logic that can evolve with the application while preserving user data."
+    },
+    {
+      "taskId": 21,
+      "taskTitle": "Implement tax calculation service",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Detail the steps to implement the tax calculation service, including tax regime interfaces, country-specific calculation functions, Portugal NHR implementation, and integration with income data for net calculations.",
+      "reasoning": "The tax calculation service has high complexity due to the need to implement country-specific tax rules and handle different residency regimes. It requires deep domain knowledge and careful implementation of complex calculation logic."
+    },
+    {
+      "taskId": 22,
+      "taskTitle": "Implement FX conversion service",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the implementation of the FX conversion service, including currency conversion functions, sensitivity analysis calculations, formatting utilities for different locales, and integration with the FX slice.",
+      "reasoning": "The FX conversion service has significant complexity due to the need to implement currency conversion logic, sensitivity analysis, and locale-specific formatting. It requires careful implementation to ensure consistent currency handling throughout the application."
+    },
+    {
+      "taskId": 23,
+      "taskTitle": "Implement budget calculation service",
+      "complexityScore": 7,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Detail the steps to implement the budget calculation service, including functions for total income, category expenses, disposable income, savings rate, monthly/annual conversions, and currency handling.",
+      "reasoning": "The budget calculation service has high complexity as it needs to work with data from multiple slices to perform core financial calculations. It requires careful implementation of calculation logic that can handle different time periods and currencies."
+    },
+    {
+      "taskId": 24,
+      "taskTitle": "Implement scenario validation service",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the implementation of the scenario validation service, including validation rules for each slice, completeness checks, logical constraint validation, and user feedback generation.",
+      "reasoning": "The validation service has significant complexity due to the need to implement validation rules for all slices and handle various logical constraints. It requires careful implementation to provide helpful feedback to users."
+    },
+    {
+      "taskId": 25,
+      "taskTitle": "Create layout components",
+      "complexityScore": 5,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Detail the steps to create the core layout components, including page layout, navigation, header, footer, responsive design implementation, and container components for different views.",
+      "reasoning": "Creating layout components has moderate complexity due to the need to implement responsive design and create a consistent structure for different views. It requires careful planning for component composition and styling."
+    },
+    {
+      "taskId": 26,
+      "taskTitle": "Build wizard navigation component",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the implementation of the wizard navigation component, including step visualization, progress tracking, section grouping, navigation controls, and integration with the wizard slice.",
+      "reasoning": "The wizard navigation component has significant complexity due to the need to visualize progress, handle step grouping, and integrate with the wizard state. It requires careful implementation of the UI and state management integration."
+    },
+    {
+      "taskId": 27,
+      "taskTitle": "Implement country and residency setup form",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Detail the steps to implement the country and residency setup form, including country selection components, residency regime options, currency selection, form validation, and profile slice integration.",
+      "reasoning": "This form has moderate complexity with several related fields and validation requirements. It requires careful implementation of the form components and integration with the profile slice."
+    },
+    {
+      "taskId": 28,
+      "taskTitle": "Implement household setup form",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the implementation of the household setup form, including member addition/editing UI, form validation, logical constraint handling, and profile slice integration.",
+      "reasoning": "The household form has significant complexity due to the need to handle dynamic addition and editing of household members. It requires careful implementation of the form components, validation, and state management."
+    },
+    {
+      "taskId": 29,
+      "taskTitle": "Implement income sources form",
+      "complexityScore": 7,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Detail the steps to implement the income sources form, including components for different income types, dynamic source addition/editing, tax calculation integration, pre/post-tax display, and income slice integration.",
+      "reasoning": "The income form has high complexity due to the need to handle different income types, integrate with tax calculations, and display both pre-tax and post-tax amounts. It requires careful implementation of the form components and calculation logic."
+    },
+    {
+      "taskId": 30,
+      "taskTitle": "Implement housing form",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the implementation of the housing form, including rent/buy path selection, conditional field rendering, validation logic, constraint handling, and housing slice integration.",
+      "reasoning": "The housing form has significant complexity due to the conditional paths for rent vs. buy scenarios. It requires careful implementation of the form components, conditional rendering, and validation logic."
+    },
+    {
+      "taskId": 31,
+      "taskTitle": "Implement remaining expense category forms",
+      "complexityScore": 7,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Detail the steps to implement the forms for transportation, utilities, healthcare, lifestyle, and education expenses, including consistent UI patterns, validation, and slice integration for each category.",
+      "reasoning": "This task has high complexity as it involves implementing multiple forms with different fields and validation requirements. It requires careful planning to ensure consistency across forms while handling the unique aspects of each expense category."
+    },
+    {
+      "taskId": 32,
+      "taskTitle": "Implement emergency buffer form",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the implementation of the emergency buffer form, including target months input, reserves input, contribution input, runway calculation display, and emergency slice integration.",
+      "reasoning": "The emergency buffer form has moderate complexity with several related fields and the need to display calculated runway information. It requires integration with the emergency slice and budget calculations."
+    },
+    {
+      "taskId": 33,
+      "taskTitle": "Implement FX sensitivity form",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Detail the steps to implement the FX sensitivity form, including exchange rate inputs, sensitivity parameter controls, impact visualization, and FX slice integration.",
+      "reasoning": "The FX sensitivity form has significant complexity due to the need to handle exchange rate inputs and display sensitivity analysis results. It requires careful implementation of the form components and integration with the FX service."
+    },
+    {
+      "taskId": 34,
+      "taskTitle": "Build scenario summary view",
+      "complexityScore": 7,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Break down the implementation of the scenario summary view, including financial metric displays, dual-currency presentation, KPI grid layout, and integration with summary slice data.",
+      "reasoning": "The summary view has high complexity due to the need to display multiple financial metrics with dual-currency support. It requires careful implementation of the UI components and integration with the summary slice calculations."
+    },
+    {
+      "taskId": 35,
+      "taskTitle": "Implement scenario management UI",
+      "complexityScore": 7,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Detail the steps to implement the scenario management UI, including scenario list, creation flow, save functionality, load functionality, auto-save implementation, and confirmation dialogs.",
+      "reasoning": "The scenario management UI has high complexity due to the need to handle multiple operations (create, save, load) and implement auto-save functionality. It requires careful implementation of the UI components and integration with the persistence layer."
+    },
+    {
+      "taskId": 36,
+      "taskTitle": "Build scenario comparison view",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Break down the implementation of the scenario comparison view, including horizontal comparison table, delta highlighting, FX impact display, compact layout, and integration with multiple scenario data.",
+      "reasoning": "The comparison view has high complexity due to the need to display and compare data from multiple scenarios with delta highlighting and FX impact. It requires careful implementation of the UI components and comparison logic."
+    },
+    {
+      "taskId": 37,
+      "taskTitle": "Implement PDF/Print export functionality",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Detail the steps to implement PDF/Print export functionality, including library research/selection, print-friendly style creation, export UI components, and comprehensive data inclusion.",
+      "reasoning": "The export functionality has significant complexity due to the need to research and implement a PDF generation solution or optimize browser printing. It requires careful implementation to ensure all relevant data is included in the export."
+    },
+    {
+      "taskId": 38,
+      "taskTitle": "Implement Plausible Analytics",
+      "complexityScore": 3,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the implementation of Plausible Analytics, including package installation, event tracking setup for key user actions, privacy consideration implementation, and testing.",
+      "reasoning": "This task has lower complexity as it involves standard integration with an analytics package. The main considerations are identifying the right events to track and ensuring no PII is collected."
+    },
+    {
+      "taskId": 39,
+      "taskTitle": "Create comprehensive test suite",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Detail the steps to create a comprehensive test suite, including coverage gap analysis, unit tests for calculation services, integration tests for key flows, coverage reporting setup, and CI integration.",
+      "reasoning": "Creating a comprehensive test suite has high complexity due to the need to test complex calculation logic and user flows across multiple components. It requires careful planning and implementation of different test types to achieve the coverage target."
+    },
+    {
+      "taskId": 40,
+      "taskTitle": "Configure Vercel deployment",
+      "complexityScore": 4,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the process of configuring Vercel deployment, including project creation, environment variable setup, domain configuration, PR preview setup, and deployment testing.",
+      "reasoning": "Configuring Vercel deployment has moderate complexity but is relatively straightforward with Vercel's Next.js integration. The main considerations are setting up the project correctly, configuring any environment variables, and testing the deployment process."
+    }
+  ]
+}

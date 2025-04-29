@@ -1,0 +1,147 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Development Workflow — One-Task-at-a-Time (Strict)
+
+This document defines a disciplined approach to task-focused development, emphasizing completion before context switching.
+
+## Core Principles
+
+- **Single Focus**: One chat window ≙ **one task**
+  - No side-quests or distractions
+  - Log new ideas as TODOs to review later
+  - Maintain strict task boundaries
+
+- **Complete Cycle Required**: Finish entirely (build ⇨ test ⇨ docs ⇨ commit) **before** starting next task
+  - No partial implementations
+  - No leaving work unfinished
+
+- **Source of Truth**:
+  - Project documentation lives in `/docs/` (VitePress)
+  - Future intent lives in `/tasks/`
+  - Improvements queue lives in `/todos.md`
+
+- **Process Discipline**: Follow end-of-task protocol strictly before starting the next task
+
+---
+
+## 🔨 During Task Work
+
+- **Focus on Criteria**: Code only towards current task's clear acceptance criteria
+  - Avoid scope creep
+  - Maintain feature boundaries
+
+- **Capture New Ideas**: For insights discovered during implementation:
+  ```typescript
+  // TODO: [description of future improvement]
+  ```
+  - Do not implement new ideas immediately unless critical to current task
+  - Maintain task boundaries
+
+- **Clarity First**: Ask for clarification if acceptance criteria become unclear
+  - Block implementation until clarity is achieved
+  - Document any clarifications in task notes
+
+---
+
+## ✅ End-of-Task Checklist (must complete in order)
+
+1. **Build the Project**
+   ```bash
+   npm run build
+   ```
+   - Ensure the project compiles completely
+   - Fix any build errors before proceeding
+
+2. **Run All Tests**
+   ```bash
+   npm test
+   ```
+   - All unit and integration tests must pass
+   - Fix any test failures before proceeding
+
+3. **Fix Errors**: Resolve any build or test issues until both are green
+
+4. **Update Documentation**
+   - Add or update `/docs/features/{{feature}}.md` with:
+     - What was built
+     - Key decisions made
+     - Implementation notes
+     - Usage examples where appropriate
+
+5. **Sync TODOs**
+   ```bash
+   npm run update-todos
+   ```
+   - Ensures TODOs from code comments are extracted to `/todos.md`
+
+6. **Commit Changes**
+   ```bash
+   git add .
+   git commit -m "feat: Complete Task #[Task Number] - [Task Title]"
+   git push origin main
+   ```
+   - Use conventional commit format
+   - Reference task number in commit message
+
+7. **Review Rules**: Check `.cursor/rules` and verify discipline followed
+
+8. **Wrap-Up Summary**: Write a completed task summary including:
+   - What was accomplished
+   - Challenges overcome
+   - Next task identification
+   - Needed context files for next task
+
+9. **Copy to Clipboard**: Save the summary for next task context
+
+10. **Request New Chat**: Ask to open a new chat window titled: 
+    ```
+    Task #[Next Task Number] - [Next Task Title]
+    ```
+    - Paste clipboard content into first message block
+
+---
+
+## 🔷 Task Start Checklist (Run for every new task)
+
+1. **Create New Chat Window**
+   - Use the title format:  
+     ```
+     Task #{{TASK_NUMBER}} – {{TASK_TITLE}}
+     ```
+   - Paste previous task summary for context
+
+2. **Load Context Files**:
+   - Every file listed under "Suggested Context Files" from previous task
+   - Any `/docs/features/…` markdown files related to current task
+   - Key implementation files needed for current work
+
+3. **Review Workflow Rules**:
+   - Re-read this document to maintain discipline
+   - Reference [`dev_workflow.mdc`](mdc:.cursor/rules/dev_workflow.mdc) for Task Master workflow details
+   - Check [`taskmaster.mdc`](mdc:.cursor/rules/taskmaster.mdc) for available commands
+
+4. **Understand Task Requirements**:
+   - Get task details using Task Master:
+     ```
+     task-master show <id>
+     ```
+   - Ensure acceptance criteria are clear before starting implementation
+
+---
+
+## Integration with Task Master
+
+This One-Task-at-a-Time workflow integrates with the Task Master process described in [`dev_workflow.mdc`](mdc:.cursor/rules/dev_workflow.mdc):
+
+- Use Task Master to identify the next task to work on
+- Apply the strict One-Task-at-a-Time discipline to that single task
+- Complete the entire workflow cycle before requesting the next task
+- Update task status in Task Master as you progress
+
+See also:
+- [`dev_workflow.mdc`](mdc:.cursor/rules/dev_workflow.mdc) for overall Task Master workflow
+- [`taskmaster.mdc`](mdc:.cursor/rules/taskmaster.mdc) for Task Master commands 
+- [`self_improve.mdc`](mdc:.cursor/rules/self_improve.mdc) for continuous improvement practices

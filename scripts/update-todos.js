@@ -1,0 +1,60 @@
+#!/usr/bin/env node
+/**
+ * update-todos.js
+ *
+ * Scans src files for // TODO: or # TODO: comments
+ * and appends anything new to /todos.md under "Outstanding TODOs".
+ */
+
+import fg   from 'fast-glob';
+import fs   from 'fs';
+import path from 'path';
+
+const root = process.cwd();
+const todoFile = path.join(root, 'todos.md');
+
+// read current todo list into a Set for de-duplication
+const existing = new Set();
+if (fs.existsSync(todoFile)) {
+  const txt = fs.readFileSync(todoFile, 'utf-8');
+  txt.split('\n').forEach(l => {
+    const m = l.match(/- \[ \] (.+)/);
+    if (m) existing.add(m[1].trim());
+  });
+}
+
+// patterns to scan (edit as needed)
+const files = await fg(['**/*.{js,ts,tsx,jsx}', '!node_modules/**', '!docs/**', '!tasks/**']);
+
+const newTodos = [];
+const todoRegex = /^\s*(?:\/\/|#)\s*TODO[:\s]+(.+)/i;
+
+for (const file of files) {
+  const lines = fs.readFileSync(file, 'utf-8').split('\n');
+  lines.forEach((line, idx) => {
+    const m = line.match(todoRegex);
+    if (m) {
+      const text = m[1].trim();
+      if (!existing.has(text)) {
+        newTodos.push({ text, file, line: idx + 1 });
+        existing.add(text);
+      }
+    }
+  });
+}
+
+if (newTodos.length === 0) {
+  console.log('✅ No new TODOs found.');
+  process.exit(0);
+}
+
+// append to todos.md
+let out = fs.existsSync(todoFile) ? fs.readFileSync(todoFile, 'utf-8') : '# Project TODOs\n\n## Outstanding TODOs\n';
+if (!out.includes('## Outstanding TODOs')) out += '\n## Outstanding TODOs\n';
+
+newTodos.forEach(t => {
+  out += `- [ ] ${t.text} _(from ${t.file}:${t.line})_\n`;
+});
+
+fs.writeFileSync(todoFile, out);
+console.log(`➕ Added ${newTodos.length} TODO(s) to todos.md`);
