@@ -1,15 +1,30 @@
 {
   "name": "living-abroad-budget",
-  "type": "module",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "setup-docs": "node scripts/setup-docs.js",
-    "update-todos": "node scripts/update-todos.js",
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "daisyui": "^4.7.3",
+    "next": "^14.1.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
-    "fast-glob": "^3.3.3",
-    "vitepress": "^1.6.3"
-  }
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.1.3",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5"
+  },
+  "description": "A modern budgeting platform for planning international moves by modeling multiple financial scenarios"
 }

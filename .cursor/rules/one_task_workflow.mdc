@@ -98,7 +98,7 @@ This document defines a disciplined approach to task-focused development, emphas
 
 10. **Request New Chat**: Ask to open a new chat window titled: 
     ```
-    Task #[Next Task Number] - [Next Task Title]
+    Task #{{NEXT_TASK_NUMBER}} - {{NEXT_TASK_TITLE}}
     ```
     - Paste clipboard content into first message block
 

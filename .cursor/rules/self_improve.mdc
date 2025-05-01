@@ -76,4 +76,51 @@ alwaysApply: true
   - Update workflow documentation as new best practices emerge
   - Document common pitfalls and how to avoid them
 
+- **Context Management & Error Recovery:**
+  - **Monitor Context Availability:**
+    - Always verify access to conversation history before attempting summaries
+    - Check if previous context is available before referencing past actions
+    - Be transparent when context is missing or incomplete
+    - When context appears missing despite user having access, request specific relevant messages to rebuild context
+    - Document any asymmetry between user-visible and AI-accessible conversation history
+  
+  - **Error Recovery Protocol:**
+    - Immediately acknowledge when context is lost or incomplete
+    - Explain the situation clearly to the user
+    - Request key messages or summaries from the user when full history isn't accessible
+    - Use explicit message sharing to rebuild critical context
+    - Document incidents to improve system robustness
+
+  - **Prevention Strategies:**
+    - Maintain key context points in task files
+    - Use detailed commit messages to track progress
+    - Regularly update task status and notes
+    - Consider implementing conversation checkpoints
+
+- **Next.js Troubleshooting Patterns:**
+  - **Common Setup Issues:**
+    - Check for conflicts between Pages Router (/pages) and App Router (/app)
+    - Verify Next.js configuration is in JavaScript (next.config.js) for simpler setup
+    - Look for multiple running Next.js processes on different ports
+    - Check TypeScript configuration in project root
+  
+  - **404 Error Resolution:**
+    - Verify file structure matches Next.js conventions exactly
+    - Check for correct use of page.tsx vs index.tsx
+    - Ensure proper export of page components
+    - Clear .next directory and node_modules for clean rebuild
+  
+  - **TypeScript Configuration:**
+    - Prefer JavaScript configuration files for initial setup
+    - Add TypeScript types gradually after basic functionality works
+    - Use type assertions (as) instead of satisfies for simpler type checking
+    - Keep configuration files minimal during initial setup
+
+  - **Development Process:**
+    - Start with minimal working example before adding features
+    - Use test pages to verify routing and configuration
+    - Kill all Node processes before starting fresh
+    - Check for port conflicts and lingering processes
+    - Document successful configuration patterns
+
 Follow [cursor_rules.mdc](mdc:.cursor/rules/cursor_rules.mdc) for proper rule formatting and structure.
