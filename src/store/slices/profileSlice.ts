@@ -39,13 +39,13 @@ export const createProfileSlice: StateCreator<
   updateHousehold: (updates: Partial<Household>) => {
     const currentState = get()
     
-    if (!currentState.household) {
+    if (!currentState.profile.household) {
       console.error('Cannot update a non-existent household')
       return
     }
     
     const updatedHousehold = {
-      ...currentState.household,
+      ...currentState.profile.household,
       ...updates,
       updatedAt: new Date()
     }

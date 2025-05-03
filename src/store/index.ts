@@ -3,6 +3,7 @@ import { devtools } from 'zustand/middleware'
 import { persistMiddleware } from './persistMiddleware'
 import { createProfileSlice } from './slices/profileSlice'
 import { RootState } from './types'
+import { StoreApi } from 'zustand'
 
 // Import other slice creators
 // These will be created as needed for each domain
@@ -17,8 +18,8 @@ import { RootState } from './types'
 export const useStore = create<RootState>()(
   devtools(
     persistMiddleware(
-      // @ts-expect-error - We'll solve these type issues in a future task
-      (set, get, api) => ({
+      // @ts-expect-error - We need to fix the typing of our store slices in a future task
+      (set, get, api: StoreApi<RootState>) => ({
         // Profile slice
         ...createProfileSlice(set, get, api),
         

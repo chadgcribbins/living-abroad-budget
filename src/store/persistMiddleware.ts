@@ -1,5 +1,6 @@
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware'
 import { RootState } from './types'
+import { StoreApi } from 'zustand'
 
 const STORAGE_KEY = 'living-abroad-budget-store'
 const STORAGE_VERSION = 1
@@ -109,12 +110,21 @@ const persistConfig = {
   // Do not persist the store on first hydration if it wasn't yet written
   skipHydration: true,
   // Run migration or validation on hydration if needed
-  onRehydrateStorage: () => (state) => {
+  onRehydrateStorage: () => (state?: RootState, error?: unknown) => {
     if (state) {
       console.info('State hydrated from localStorage')
+    } else if (error) {
+      console.error('Failed to hydrate state:', error)
     }
   }
 }
 
-export const persistMiddleware = <T extends RootState>(initializer: any) => 
+// Define the initializer type
+type StoreInitializer = (
+  set: (state: Partial<RootState>) => void,
+  get: () => RootState,
+  api: StoreApi<RootState>
+) => RootState;
+
+export const persistMiddleware = (initializer: StoreInitializer) => 
   persist(initializer, persistConfig) 
