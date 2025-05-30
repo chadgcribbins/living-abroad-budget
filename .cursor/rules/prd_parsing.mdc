@@ -1,0 +1,48 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# PRD Parsing Safety Guidelines
+
+These guidelines exist to prevent accidental task loss when using TaskMaster to parse Product Requirements Documents (PRDs).
+
+## **WARNING: Task Loss Risk During PRD Re-parsing**
+- **❌ NEVER parse a PRD without explicit user confirmation if tasks already exist**
+- **💾 Always verify the current task state before parsing**
+- **🔒 Require explicit confirmation before potentially destructive operations**
+
+## **Required Pre-Parsing Checks**
+
+1. **Check Existing Tasks First**
+   - Run `task-master list` or use the `get_tasks` MCP tool to check for existing tasks
+   - If tasks exist, warn the user about potential data loss
+
+2. **Explicit Confirmation Protocol**
+   - **Request specific, explicit confirmation** from the user before parsing any PRD
+   - Sample confirmation request: "I see you have existing tasks. Parsing a PRD will generate new tasks and may overwrite existing ones. Please explicitly confirm you want to proceed with parsing the PRD by typing 'Yes, parse the PRD' if this is your intent."
+   - Do not proceed without this exact confirmation
+
+3. **Backup Recommendation**
+   - Suggest exporting current tasks before parsing: `task-master list > current_tasks_backup.txt`
+   - Recommend creating a backup of tasks.json: `cp tasks/tasks.json tasks/tasks.json.bak`
+
+## **Safer Alternative Workflows**
+
+- **Task Addition:** If the goal is to add new tasks without replacing existing ones, recommend `task-master add-task --prompt="..."` instead
+- **Task Updates:** If the goal is to update existing tasks, recommend `task-master update --from=<id> --prompt="..."` instead
+- **Merge Strategy:** For incorporating PRD changes, consider manually extracting key changes and using update commands
+
+## **Recovery Options**
+
+If tasks are accidentally lost:
+1. Check for automated backups in tasks/ directory
+2. Restore from version control if available
+3. Recreate critical tasks using `task-master add-task`
+
+## **Best Practices**
+
+- Always make PRD parsing a deliberate, confirmed action
+- Keep PRDs versioned in the planning/ directory with clear version numbers
+- Use incremental updates rather than full re-parsing when possible
+- Document the current project state in commit messages when making significant changes

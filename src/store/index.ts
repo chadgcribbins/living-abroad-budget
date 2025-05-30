@@ -1,9 +1,10 @@
 import { create } from 'zustand'
-import { devtools } from 'zustand/middleware'
-import { persistMiddleware } from './persistMiddleware'
-import { createProfileSlice } from './slices/profileSlice'
-import { RootState } from './types'
-import { StoreApi } from 'zustand'
+import { devtools, persist } from 'zustand/middleware'
+import { RootState, IncomeState, HousingState, EducationState, HealthcareState, TransportationState, LifestyleState, UtilitiesState, EmergencyState } from './types'
+import createProfileSlice from './slices/profileSlice'
+import createScenarioSlice from './slices/scenarioSlice'
+import { createFXSlice } from './slices/fxSlice'
+import { createUISlice } from './slices/uiSlice'
 
 // Import other slice creators
 // These will be created as needed for each domain
@@ -12,101 +13,87 @@ import { StoreApi } from 'zustand'
 // etc.
 
 /**
- * Create the store with all slices combined and middleware applied
- * Each slice manages its own part of the global state
+ * Create the store with all slices
  */
 export const useStore = create<RootState>()(
   devtools(
-    persistMiddleware(
-      // @ts-expect-error - We need to fix the typing of our store slices in a future task
-      (set, get, api: StoreApi<RootState>) => ({
-        // Profile slice
-        ...createProfileSlice(set, get, api),
+    persist(
+      (set, get, api): RootState => {
+        console.log('Creating Zustand store...');
         
-        // Placeholder implementations for other slices
-        // These will be replaced with proper implementations as we build them
-        income: {
-          incomeSources: [],
-          primaryCurrency: 'USD',
-          totalIncome: null,
-          addIncomeSource: () => {},
-          updateIncomeSource: () => {},
-          removeIncomeSource: () => {},
-          setPrimaryCurrency: () => {}
-        },
-        housing: {
-          selectedType: null,
-          expenses: null,
-          setHousingType: () => {},
-          updateHousingExpenses: () => {},
-          addInsurancePolicy: () => {},
-          removeInsurancePolicy: () => {},
-          addUtilityExpense: () => {},
-          removeUtilityExpense: () => {}
-        },
-        education: {
-          expenses: {},
-          setInstitutionType: () => {},
-          setProgramType: () => {},
-          updateEducationExpense: () => {},
-          removeEducationExpense: () => {}
-        },
-        healthcare: {
-          selectedType: null,
-          expenses: {},
-          setHealthcareType: () => {},
-          updateHealthcareExpense: () => {},
-          removeHealthcareExpense: () => {}
-        },
-        transportation: {
-          selectedType: null,
-          expenses: null,
-          setTransportType: () => {},
-          updateTransportExpense: () => {}
-        },
-        lifestyle: {
-          expenses: [],
-          addLifestyleExpense: () => {},
-          updateLifestyleExpense: () => {},
-          removeLifestyleExpense: () => {}
-        },
-        utilities: {
-          expenses: null,
-          updateUtilityExpense: () => {}
-        },
-        emergency: {
-          fund: null,
-          updateEmergencyFund: () => {}
-        },
-        fx: {
-          settings: null,
-          rates: [],
-          updateFXSettings: () => {},
-          addExchangeRate: () => {},
-          updateExchangeRate: () => {}
-        },
-        scenarios: {
-          scenarios: {},
-          activeScenarioId: null,
-          createScenario: () => {},
-          updateScenario: () => {},
-          deleteScenario: () => {},
-          setActiveScenario: () => {},
-          duplicateScenario: () => {}
-        },
-        ui: {
-          activeView: 'dashboard',
-          sidebarOpen: true,
-          theme: 'system',
-          setActiveView: () => {},
-          toggleSidebar: () => {},
-          setTheme: () => {}
-        }
-      })
-    ),
-    {
-      name: 'living-abroad-budget-store',
-    }
+        // Create slice instances
+        const scenarioSliceInstance = createScenarioSlice(set, get, api);
+        const profileSliceInstance = createProfileSlice(set, get, api);
+        
+        console.log('[store/index.ts] Creating fxSlice instance...');
+        const fxSliceInstance = createFXSlice(set, get, api);
+
+        console.log('[store/index.ts] Creating uiSlice instance...');
+        const uiSliceFull = createUISlice(set, get, api);
+
+        // TODO: Create instances for other slices (income, housing, etc.)
+
+        // Explicitly construct the RootState object
+        const rootStateResult: RootState = {
+          // --- Profile Slice --- 
+          profile: profileSliceInstance,
+
+          // --- Scenario Slice (Flattened) --- 
+          scenarios: scenarioSliceInstance.scenarios,
+          activeScenarioId: scenarioSliceInstance.activeScenarioId,
+          isLoading: scenarioSliceInstance.isLoading,
+          error: scenarioSliceInstance.error,
+          storageStats: scenarioSliceInstance.storageStats,
+          activeScenario: scenarioSliceInstance.activeScenario,
+          scenarioList: scenarioSliceInstance.scenarioList,
+          loadScenarios: scenarioSliceInstance.loadScenarios,
+          setActiveScenarioId: scenarioSliceInstance.setActiveScenarioId,
+          createScenario: scenarioSliceInstance.createScenario,
+          updateScenario: scenarioSliceInstance.updateScenario,
+          deleteScenario: scenarioSliceInstance.deleteScenario,
+          duplicateScenario: scenarioSliceInstance.duplicateScenario,
+          exportScenarios: scenarioSliceInstance.exportScenarios,
+          importScenarios: scenarioSliceInstance.importScenarios,
+          createTemplateScenario: scenarioSliceInstance.createTemplateScenario,
+          refreshStorageStats: scenarioSliceInstance.refreshStorageStats,
+          scheduleAutoSave: scenarioSliceInstance.scheduleAutoSave,
+          fromActiveScenario: scenarioSliceInstance.fromActiveScenario,
+          
+          // --- UI Slice --- 
+          ui: uiSliceFull.ui,
+          
+          // --- Other Slices (Placeholders - Replace with actual instances or defaults) ---
+          income: {} as IncomeState, 
+          housing: {} as HousingState,
+          education: {} as EducationState,
+          healthcare: {} as HealthcareState,
+          transportation: {} as TransportationState,
+          lifestyle: {} as LifestyleState,
+          utilities: {} as UtilitiesState,
+          emergency: {} as EmergencyState,
+          fx: fxSliceInstance, 
+        };
+
+        return rootStateResult;
+      },
+      {
+        name: 'living-abroad-budget',
+        partialize: (state) => ({
+          profile: state.profile,
+          scenarios: state.scenarios,
+          activeScenarioId: state.activeScenarioId,
+          ui: state.ui,
+          income: state.income,
+          housing: state.housing,
+          education: state.education,
+          healthcare: state.healthcare,
+          transportation: state.transportation,
+          lifestyle: state.lifestyle,
+          utilities: state.utilities,
+          emergency: state.emergency,
+        }),
+      }
+    )
   )
 )
 

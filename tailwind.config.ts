@@ -2,6 +2,9 @@ import type { Config } from 'tailwindcss'
 import daisyui from 'daisyui'
 import daisyuiThemes from 'daisyui/src/theming/themes'
 
+// Using @egoist/tailwindcss-icons plugin
+import { iconsPlugin, getIconCollections } from "@egoist/tailwindcss-icons";
+
 const config = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -11,7 +14,13 @@ const config = {
   theme: {
     extend: {},
   },
-  plugins: [daisyui],
+  plugins: [
+    daisyui,
+    iconsPlugin({
+      // Specify the collections you want to use
+      collections: getIconCollections(["lucide"]),
+    }),
+  ],
   daisyui: {
     themes: [
       {

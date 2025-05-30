@@ -41,7 +41,8 @@ import {
 } from '@/types/lifestyle'
 
 import { 
-  UtilityExpense as UtilitiesExpense
+  UtilityExpense as UtilitiesExpense, 
+  UtilityServiceType
 } from '@/types/utilities'
 
 import { 
@@ -57,6 +58,27 @@ import {
   HouseholdMember,
   HouseholdRelationship
 } from '@/types/household'
+
+import {
+  Scenario,
+  CreateScenarioInput,
+  UpdateScenarioInput,
+  ScenarioMap,
+  ScenarioListItem,
+  ScenarioStorageStats,
+  ScenarioContent
+} from '@/types/scenario'
+
+// Re-export Scenario and related types that might be needed externally
+export type { 
+  Scenario, 
+  CreateScenarioInput, 
+  UpdateScenarioInput, 
+  ScenarioMap, 
+  ScenarioListItem, 
+  ScenarioStorageStats,
+  ScenarioContent 
+} from '@/types/scenario';
 
 /**
  * FX settings for currency conversion and sensitivity analysis
@@ -142,20 +164,6 @@ export interface HealthcareState {
 }
 
 /**
- * Utility type enum (not imported from types file)
- */
-export enum UtilityType {
-  ELECTRICITY = 'ELECTRICITY',
-  GAS = 'GAS',
-  WATER = 'WATER',
-  INTERNET = 'INTERNET',
-  TV = 'TV',
-  PHONE = 'PHONE',
-  TRASH = 'TRASH',
-  OTHER = 'OTHER'
-}
-
-/**
  * State for the transportation slice
  */
 export interface TransportationState {
@@ -179,8 +187,8 @@ export interface LifestyleState {
  * State for the utilities slice
  */
 export interface UtilitiesState {
-  expenses: Record<UtilityType, UtilitiesExpense> | null;
-  updateUtilityExpense: (type: UtilityType, expense: Partial<UtilitiesExpense>) => void;
+  expenses: Record<UtilityServiceType, UtilitiesExpense> | null;
+  updateUtilityExpense: (type: UtilityServiceType, expense: Partial<UtilitiesExpense>) => void;
 }
 
 /**
@@ -196,10 +204,16 @@ export interface EmergencyState {
  */
 export interface FXState {
   settings: FXSettings | null;
-  rates: ExchangeRate[];
+  rates: Record<string, number>;
+  isLoading: boolean;
+  error: Error | null;
+  lastUpdated: Date | null;
+  loadInitialFXData: () => Promise<void>;
   updateFXSettings: (settings: Partial<FXSettings>) => void;
   addExchangeRate: (rate: ExchangeRate) => void;
-  updateExchangeRate: (id: string, rate: Partial<ExchangeRate>) => void;
+  updateExchangeRate: (currencyCodeToUpdate: string, newRate: Partial<{ rate: number }>) => void;
+  getExchangeRate: (fromCurrency: CurrencyCode, toCurrency: CurrencyCode) => ExchangeRate | null;
+  convertAmount: (amount: number, fromCurrency: CurrencyCode, toCurrency: CurrencyCode) => number | null;
 }
 
 /**
@@ -215,45 +229,44 @@ export interface UIState {
 }
 
 /**
- * Scenario represents a complete budget scenario that can be saved, loaded, and compared
- */
-export interface Scenario extends Identifiable, Timestamped {
-  name: string;
-  description?: string;
-  originCountry: CountryCode;
-  destinationCountry: CountryCode;
-  household: Household;
-  incomeSources: IncomeSource[];
-  housingType: HousingType;
-  housingExpense: HousingExpense;
-  educationExpenses: Record<string, EducationExpense>;
-  healthcareType: HealthcareType;
-  healthcareExpenses: Record<string, HealthcareExpense>;
-  transportType: TransportType;
-  transportExpense: TransportExpense;
-  lifestyleExpenses: LifestyleExpense[];
-  utilityExpenses: Record<UtilityType, UtilitiesExpense>;
-  emergencyFund: EmergencyFund;
-  fxSettings: FXSettings;
-}
-
-/**
  * State for managing scenarios
  */
 export interface ScenarioState {
-  scenarios: Record<string, Scenario>;
+  // State
+  scenarios: ScenarioMap;
   activeScenarioId: string | null;
-  createScenario: (scenario: Omit<Scenario, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateScenario: (id: string, updates: Partial<Omit<Scenario, 'id'>>) => void;
-  deleteScenario: (id: string) => void;
-  setActiveScenario: (id: string | null) => void;
-  duplicateScenario: (id: string, newName: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  storageStats: ScenarioStorageStats | null;
+
+  // Derived state
+  activeScenario: Scenario | null;
+  scenarioList: ScenarioListItem[];
+
+  // Actions
+  loadScenarios: () => void;
+  setActiveScenarioId: (id: string | null) => void;
+  createScenario: (input: CreateScenarioInput) => Promise<string | null>; // Returns new ID on success
+  updateScenario: (id: string, updates: UpdateScenarioInput) => Promise<boolean>;
+  deleteScenario: (id: string) => Promise<boolean>;
+  duplicateScenario: (id: string, newName?: string) => Promise<string | null>; // Returns new ID on success
+  exportScenarios: () => Promise<string | null>; // Returns JSON string on success
+  importScenarios: (jsonData: string, overwrite?: boolean) => Promise<boolean>;
+  createTemplateScenario: (name: string, originCountry: CountryCode, destinationCountry: CountryCode) => Promise<string | null>; // Returns new ID on success
+  refreshStorageStats: () => void;
+  
+  // Auto-save functionality
+  scheduleAutoSave: (id: string, updates: UpdateScenarioInput) => void;
+  
+  // Internal utility methods
+  fromActiveScenario: <T extends keyof ScenarioContent>(key: T) => ScenarioContent[T] | undefined;
 }
 
 /**
- * The complete application state combining all slices
+ * Root state of the application, combining all slices.
+ * ScenarioState properties are merged directly into RootState.
  */
-export interface RootState {
+export interface RootState extends Omit<ScenarioState, 'scenarios' | 'activeScenario' | 'scenarioList'> { // Omit derived/map to avoid conflict if we name map 'scenarios'
   profile: ProfileState;
   income: IncomeState;
   housing: HousingState;
@@ -264,6 +277,8 @@ export interface RootState {
   utilities: UtilitiesState;
   emergency: EmergencyState;
   fx: FXState;
-  scenarios: ScenarioState;
+  scenarios: ScenarioMap; // Explicitly define the scenarios map property
+  activeScenario: Scenario | null; // Add activeScenario to RootState
+  scenarioList: ScenarioListItem[]; // Add scenarioList to RootState
   ui: UIState;
 } 

@@ -2,11 +2,12 @@ import { useStore } from './index'
 import { RootState } from './types'
 import { useCallback, useMemo } from 'react'
 import { CountryCode } from '@/types/base'
+import { Household } from '@/types/household'
 
 // Profile selectors
-const getHousehold = (state: RootState) => state.profile.household
-const getIsComplete = (state: RootState) => state.profile.isComplete
-const getActiveCountry = (state: RootState) => state.profile.activeCountry
+const getHousehold = (state: RootState) => state.profile?.household || null
+const getIsComplete = (state: RootState) => state.profile?.isComplete || false
+const getActiveCountry = (state: RootState) => state.profile?.activeCountry || null
 
 // Profile hooks
 export const useHousehold = () => useStore(getHousehold)
@@ -15,10 +16,10 @@ export const useActiveCountry = () => useStore(getActiveCountry)
 
 // Profile actions hooks
 export const useProfileActions = () => {
-  const setHousehold = useStore((state) => state.profile.setHousehold)
-  const updateHousehold = useStore((state) => state.profile.updateHousehold)
-  const clearHousehold = useStore((state) => state.profile.clearHousehold)
-  const setActiveCountry = useStore((state) => state.profile.setActiveCountry)
+  const setHousehold = useStore((state) => state.profile?.setHousehold || ((_household: Household) => console.warn('Profile state not initialized')))
+  const updateHousehold = useStore((state) => state.profile?.updateHousehold || ((_updates: Partial<Household>) => console.warn('Profile state not initialized')))
+  const clearHousehold = useStore((state) => state.profile?.clearHousehold || (() => console.warn('Profile state not initialized')))
+  const setActiveCountry = useStore((state) => state.profile?.setActiveCountry || ((_country: CountryCode) => console.warn('Profile state not initialized')))
   
   return {
     setHousehold,
@@ -72,7 +73,7 @@ export const useSwitchCountry = () => {
     
     // Otherwise toggle between origin/destination
     if (household?.originCountry && household?.destinationCountry) {
-      const currentActiveCountry = useStore.getState().profile.activeCountry
+      const currentActiveCountry = useStore.getState().profile?.activeCountry
       
       if (currentActiveCountry === household.originCountry) {
         setActiveCountry(household.destinationCountry)
@@ -83,4 +84,156 @@ export const useSwitchCountry = () => {
   }, [setActiveCountry, household, activeCountry])
 }
 
-// Additional hooks can be added for other slices of state 
+/**
+ * Hook to access the scenario state and actions from the store
+ * @returns Scenario state and actions
+ */
+export const useScenarioStore = () => {
+  const state = useStore();
+  
+  // Enhanced debugging to see the exact structure
+  console.log('useScenarioStore debug:', {
+    hasScenarios: !!state.scenarios,
+    scenariosType: state.scenarios ? typeof state.scenarios : 'undefined',
+    scenariosKeys: state.scenarios ? Object.keys(state.scenarios) : [],
+    scenariosValue: state.scenarios,
+    stateKeys: Object.keys(state),
+  });
+  
+  // Check if scenarios slice exists and is properly initialized
+  if (!state.scenarios) {
+    console.error('Scenarios slice is missing from the store!');
+    return {
+      scenarios: {},
+      activeScenarioId: null,
+      isLoading: false,
+      error: 'Scenarios slice was not properly initialized',
+      scenarioList: [],
+      activeScenario: null,
+      loadScenarios: () => console.error('Cannot load scenarios: Store not initialized'),
+      createScenario: () => { 
+        console.error('Cannot create scenario: Store not initialized');
+        return Promise.resolve(null);
+      },
+      getScenario: () => Promise.resolve(null),
+      setActiveScenario: () => {},
+      updateScenario: () => Promise.resolve(false),
+      deleteScenario: () => Promise.resolve(false),
+      duplicateScenario: () => Promise.resolve(null),
+      importScenarios: () => Promise.resolve(0),
+      exportScenarios: () => Promise.resolve(null),
+      clearAllScenarios: () => Promise.resolve(false),
+      createTemplateScenario: () => Promise.resolve(null),
+      refreshStorageStats: () => {},
+      scheduleAutoSave: () => {},
+      setAutosaveEnabled: () => {},
+      fromActiveScenario: () => undefined,
+    };
+  }
+  
+  // Return all scenario-related properties from the RootState
+  return {
+    scenarios: state.scenarios, // The ScenarioMap
+    activeScenarioId: state.activeScenarioId,
+    isLoading: state.isLoading,
+    error: state.error,
+    storageStats: state.storageStats,
+    activeScenario: state.activeScenario, // Getter
+    scenarioList: state.scenarioList,   // Getter
+    loadScenarios: state.loadScenarios,
+    setActiveScenarioId: state.setActiveScenarioId,
+    createScenario: state.createScenario,
+    updateScenario: state.updateScenario,
+    deleteScenario: state.deleteScenario,
+    duplicateScenario: state.duplicateScenario,
+    exportScenarios: state.exportScenarios,
+    importScenarios: state.importScenarios,
+    createTemplateScenario: state.createTemplateScenario,
+    refreshStorageStats: state.refreshStorageStats,
+    scheduleAutoSave: state.scheduleAutoSave,
+    fromActiveScenario: state.fromActiveScenario,
+  };
+}
+
+/**
+ * Hook to access UI state from the store
+ * @returns UI state and actions
+ */
+export const useUIState = () => {
+  const state = useStore();
+  
+  // Check if ui slice and its actions are available
+  const uiReady = state?.ui && typeof state.ui.setActiveView === 'function';
+
+  try {
+    return {
+      activeView: state?.ui?.activeView || 'home',
+      sidebarOpen: state?.ui?.sidebarOpen || true,
+      theme: state?.ui?.theme || 'light',
+      setActiveView: uiReady ? state.ui.setActiveView : undefined,
+      toggleSidebar: uiReady ? state.ui.toggleSidebar : undefined,
+      setTheme: uiReady ? state.ui.setTheme : undefined,
+    };
+  } catch (error) {
+    console.error('Error in useUIState hook:', error);
+    // Return safe defaults with undefined actions
+    return {
+      activeView: 'home',
+      sidebarOpen: true,
+      theme: 'light',
+      setActiveView: undefined,
+      toggleSidebar: undefined,
+      setTheme: undefined,
+    };
+  }
+};
+
+/**
+ * Hook to access navigation state
+ * @returns Navigation-related UI state and actions
+ */
+export const useNavigation = () => {
+  const state = useStore();
+  const uiReady = state?.ui && typeof state.ui.setActiveView === 'function'; // Assuming setActiveView indicates readiness
+
+  try {
+    return {
+      activeView: state?.ui?.activeView || 'home',
+      sidebarOpen: state?.ui?.sidebarOpen || true,
+      setActiveView: uiReady ? state.ui.setActiveView : undefined,
+      toggleSidebar: uiReady ? state.ui.toggleSidebar : undefined,
+    };
+  } catch (error) {
+    console.error('Error in useNavigation hook:', error);
+    // Return safe defaults with undefined actions
+    return {
+      activeView: 'home',
+      sidebarOpen: true,
+      setActiveView: undefined,
+      toggleSidebar: undefined,
+    };
+  }
+};
+
+/**
+ * Hook to access theme state
+ * @returns Theme state and actions
+ */
+export const useTheme = () => {
+  const state = useStore();
+  const uiReady = state?.ui && typeof state.ui.setTheme === 'function'; // Assuming setTheme indicates readiness
+  
+  try {
+    return {
+      theme: state?.ui?.theme || 'light',
+      setTheme: uiReady ? state.ui.setTheme : undefined,
+    };
+  } catch (error) {
+    console.error('Error in useTheme hook:', error);
+    // Return safe defaults with undefined actions
+    return {
+      theme: 'light',
+      setTheme: undefined,
+    };
+  }
+}; 

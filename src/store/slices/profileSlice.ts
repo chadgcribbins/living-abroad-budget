@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid'
 /**
  * Profile slice creator for managing household information
  */
-export const createProfileSlice: StateCreator<
+const createProfileSlice: StateCreator<
   RootState,
   [],
   [],
@@ -76,4 +76,6 @@ export const createProfileSlice: StateCreator<
       activeCountry: country
     }))
   }
-}) 
+})
+
+export default createProfileSlice; 
