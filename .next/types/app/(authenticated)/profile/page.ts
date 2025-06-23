@@ -1,4 +1,4 @@
-// File: /Users/chadcribbins/GitHub/living-abroad-budget/src/app/(authenticated)/profile/page.tsx
+// File: /workspace/src/app/(authenticated)/profile/page.tsx
 import * as entry from '../../../../../src/app/(authenticated)/profile/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

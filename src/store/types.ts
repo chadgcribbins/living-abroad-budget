@@ -132,6 +132,11 @@ export interface ScenarioState {
 }
 
 /**
+ * Import IncomeState from incomeSlice
+ */
+import type { IncomeState } from './slices/incomeSlice';
+
+/**
  * Clean RootState with only the working features
  * Removed: income, housing, education, healthcare, transportation, lifestyle, utilities, emergency
  * These will be added back properly when implemented for real
@@ -139,6 +144,7 @@ export interface ScenarioState {
 export interface RootState extends Omit<ScenarioState, 'scenarios' | 'activeScenario' | 'scenarioList'> {
   profile: ProfileState;
   fx: FXState;
+  income: IncomeState; // Add income state
   scenarios: ScenarioMap; // Explicitly define the scenarios map property
   activeScenario: Scenario | null; // Add activeScenario to RootState
   scenarioList: ScenarioListItem[]; // Add scenarioList to RootState

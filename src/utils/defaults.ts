@@ -57,6 +57,7 @@ export const DEFAULT_INCOME_SOURCES: IncomeSource[] = [
     id: uuidv4(),
     name: 'Primary Job',
     type: IncomeType.EMPLOYMENT,
+    partner: 'partner1',
     amount: { amount: 50000, currency: CurrencyCode.USD },
     frequency: FrequencyType.ANNUALLY,
     isActive: true,

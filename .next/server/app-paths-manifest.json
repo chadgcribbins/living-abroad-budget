@@ -1,6 +1,25 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
+  "/about/page": "app/about/page.js",
+  "/api/fx/latest/route": "app/api/fx/latest/route.js",
+  "/api/fx/historical/[date]/route": "app/api/fx/historical/[date]/route.js",
+  "/components/interactive/page": "app/components/interactive/page.js",
+  "/components/charts/page": "app/components/charts/page.js",
+  "/components/page": "app/components/page.js",
+  "/debug/page": "app/debug/page.js",
+  "/dev/demos/page": "app/dev/demos/page.js",
+  "/demo/forex/page": "app/demo/forex/page.js",
   "/page": "app/page.js",
+  "/test/page": "app/test/page.js",
+  "/scenarios/new/page": "app/scenarios/new/page.js",
+  "/testform/page": "app/testform/page.js",
+  "/settings/page": "app/settings/page.js",
+  "/(authenticated)/scenario/[scenarioId]/edit/page": "app/(authenticated)/scenario/[scenarioId]/edit/page.js",
+  "/(authenticated)/page": "app/(authenticated)/page.js",
   "/(authenticated)/profile/page": "app/(authenticated)/profile/page.js",
-  "/(authenticated)/dashboard/page": "app/(authenticated)/dashboard/page.js"
+  "/(authenticated)/dashboard/page": "app/(authenticated)/dashboard/page.js",
+  "/(authenticated)/scenarios/[id]/edit/page": "app/(authenticated)/scenarios/[id]/edit/page.js",
+  "/(authenticated)/scenarios/[id]/page": "app/(authenticated)/scenarios/[id]/page.js",
+  "/(authenticated)/scenarios/page": "app/(authenticated)/scenarios/page.js",
+  "/(authenticated)/scenarios/create/page": "app/(authenticated)/scenarios/create/page.js"
 }
