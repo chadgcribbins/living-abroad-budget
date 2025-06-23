@@ -78,6 +78,26 @@ export const useUI = () => {
   }));
 };
 
+// Income hooks
+export const useIncome = () => {
+  return useStore((state) => ({
+    tempIncomes: state.income.tempIncomes,
+    taxRegime: state.income.taxRegime,
+    totalGrossIncome: state.income.totalGrossIncome,
+    totalNetIncome: state.income.totalNetIncome,
+    // Actions
+    addIncome: state.income.addIncome,
+    updateIncome: state.income.updateIncome,
+    deleteIncome: state.income.deleteIncome,
+    setTaxRegime: state.income.setTaxRegime,
+    loadIncomesFromScenario: state.income.loadIncomesFromScenario,
+    clearIncomes: state.income.clearIncomes,
+    calculateTotals: state.income.calculateTotals,
+    calculateNetIncome: state.income.calculateNetIncome,
+    getIncomesByPartner: state.income.getIncomesByPartner,
+  }));
+};
+
 // Derived state hooks
 export const useHouseholdSize = () => {
   const household = useStore((state) => state.profile.household);

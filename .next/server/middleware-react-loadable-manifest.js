@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST='{"app/demo/forex/page.tsx -> @/components/CurrencyConverter":{"id":49241,"files":["static/chunks/6373-fecf9633d5d87250.js","static/chunks/6760-81cf2a41f6cf31a6.js","static/chunks/9241.eac34d60d0262c4f.js"]}}';

@@ -1,5 +1,8 @@
 import { FrequencyType, Identifiable, Money, Timestamped } from './base';
 
+// Re-export FrequencyType so it can be imported from this module
+export { FrequencyType } from './base';
+
 /**
  * General income types
  */
@@ -11,18 +14,25 @@ export enum IncomeType {
 }
 
 /**
+ * Partner designation for income tracking
+ */
+export type IncomePartner = 'partner1' | 'partner2' | 'joint';
+
+/**
  * Base interface for all income sources
  */
 export interface IncomeSource extends Identifiable, Timestamped {
   name: string;
   description?: string;
   type: IncomeType;
+  partner: IncomePartner;
   amount: Money;
   frequency: FrequencyType;
   isActive: boolean;
   startDate?: Date;
   endDate?: Date;
   taxable: boolean;
+  taxTreatment?: 'standard' | 'nhr' | 'exempt';
 }
 
 /**
