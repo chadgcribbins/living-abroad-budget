@@ -8,7 +8,8 @@ import {
   ScenarioMap,
   ScenarioListItem,
   ScenarioStorageStats,
-  ScenarioContent
+  ScenarioContent,
+  CURRENT_SCHEMA_VERSION
 } from '@/types/scenario'
 
 import {
@@ -59,8 +60,8 @@ export interface ScenarioState {
 /**
  * This creates a slice of the store for handling budget scenarios
  */
-const createScenarioSlice: StateCreator<RootState, [], [], ScenarioState> = (set, get, _api) => {
-  console.log('Initializing scenario slice...')
+const createScenarioSlice: StateCreator<RootState, [], [], ScenarioState> = (set, get, /* _api */) => {
+  // Initialize scenario slice
   
   // Create a debounced auto-save function
   const debouncedAutoSave = debounce(
@@ -116,7 +117,8 @@ const createScenarioSlice: StateCreator<RootState, [], [], ScenarioState> = (set
           createdAt: scenario.createdAt.toISOString(),
           updatedAt: scenario.updatedAt.toISOString(),
           originCountry: scenario.content.originCountry,
-          destinationCountry: scenario.content.destinationCountry
+          destinationCountry: scenario.content.destinationCountry,
+          completionStatus: scenario.content.completionStatus || 'draft'
         }))
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     },
@@ -276,7 +278,8 @@ const createScenarioSlice: StateCreator<RootState, [], [], ScenarioState> = (set
         if (result.success) {
           set((state) => {
             // Create a new scenarios object without the deleted scenario
-            const { [id]: deleted, ...remainingScenarios } = state.scenarios as ScenarioMap;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { [id]: _deleted, ...remainingScenarios } = state.scenarios as ScenarioMap; // Prefixed deleted with _
             
             // Reset activeScenarioId if it was the deleted scenario
             const newActiveScenarioId = 

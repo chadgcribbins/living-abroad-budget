@@ -19,19 +19,35 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
 }) => {
   const router = useRouter();
   const pathname = usePathname();
-  const { isComplete } = useProfile();
+  const { isComplete, isHydrated } = useProfile();
+  console.log('[RouteGuard] Initial isComplete:', isComplete, 'isHydrated:', isHydrated, 'Pathname:', pathname);
 
   useEffect(() => {
+    console.log('[RouteGuard] useEffect triggered. isComplete:', isComplete, 'isHydrated:', isHydrated, 'requireCompleteProfile:', requireCompleteProfile, 'Pathname:', pathname);
+    if (!isHydrated) return;
+
     // If profile completion is required but not complete,
     // redirect to profile page
     if (requireCompleteProfile && !isComplete && pathname !== '/profile') {
+      console.log('[RouteGuard] Redirecting to /profile because isComplete is false after hydration.');
       router.push('/profile');
     }
-  }, [router, pathname, isComplete, requireCompleteProfile]);
+  }, [router, pathname, isComplete, requireCompleteProfile, isHydrated]);
+
+  console.log('[RouteGuard] Evaluating render block. isComplete:', isComplete, 'isHydrated:', isHydrated, 'requireCompleteProfile:', requireCompleteProfile, 'Pathname:', pathname);
+  if (!isHydrated) {
+    console.log('[RouteGuard] Rendering loading/hydration indicator (or null).');
+    return (
+        <div className="flex flex-col min-h-screen justify-center items-center">
+          <p>Loading profile...</p>
+        </div>
+    );
+  }
 
   // If we're checking for profile completion and it's not complete,
   // and we're not already on the profile page, don't render children
   if (requireCompleteProfile && !isComplete && pathname !== '/profile') {
+    console.log('[RouteGuard] Rendering redirect message, not children.');
     return (
       <div className="container mx-auto py-12">
         <div className="alert alert-warning shadow-lg">

@@ -1,23 +1,23 @@
-import { ReactNode } from 'react';
+import React from 'react';
 import './globals.css';
 import { Metadata } from 'next';
 import { StoreProvider } from '@/store/StoreProvider';
 
 export const metadata: Metadata = {
-  title: 'Living Abroad Budget',
-  description: 'A modern budgeting platform for planning international moves',
+  title: 'Living Abroad Budget Tool',
+  description: 'Plan your international move with confidence.',
 };
 
 export default function RootLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" data-theme="light">
       <body className="min-h-screen bg-base-100">
         <StoreProvider>
-          {children}
+          <main>{children}</main>
         </StoreProvider>
       </body>
     </html>

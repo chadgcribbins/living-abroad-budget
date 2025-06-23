@@ -20,11 +20,21 @@ import {
   getStorageStats,
   MAX_STORAGE_SIZE
 } from '@/utils/storageUtils';
-import { CountryCode, ResidencyType, TaxRegimeType, CurrencyCode, FrequencyType } from '@/types/base';
+import { CountryCode } from '@/types/base';
 import { HousingType } from '@/types/housing';
 import { TransportType } from '@/types/transport';
-import { UtilityServiceType, UtilityPlanType } from '@/types/utilities';
-import { HealthcareType } from '@/store/types';
+import { HealthcareCoverageType as HealthcareType } from '@/types/healthcare';
+import { getScenarioCompletionStatus } from './scenarioCompletion';
+import { 
+  DEFAULT_HOUSEHOLD_COMPOSITION, 
+  DEFAULT_FX_SETTINGS,
+  DEFAULT_INCOME_SOURCES,
+  DEFAULT_HOUSING_EXPENSE,
+  DEFAULT_TRANSPORT_EXPENSE,
+  DEFAULT_UTILITY_EXPENSES,
+  DEFAULT_LIFESTYLE_EXPENSES,
+  DEFAULT_EMERGENCY_FUND
+} from '@/utils/defaults';
 
 // Constants
 const SCENARIOS_NAMESPACE = 'scenarios';
@@ -78,14 +88,18 @@ export const generateScenarioName = (
 export const createScenario = (input: CreateScenarioInput): StorageOperationResult<Scenario> => {
   try {
     const now = new Date();
+    const initialContent: ScenarioContent = {
+      ...input.content,
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      completionStatus: 'draft'
+    };
+    initialContent.completionStatus = getScenarioCompletionStatus(initialContent);
+
     const scenario: Scenario = {
       id: uuidv4(),
       name: input.name,
       description: input.description,
-      content: {
-        ...input.content,
-        schemaVersion: CURRENT_SCHEMA_VERSION
-      },
+      content: initialContent,
       createdAt: now,
       updatedAt: now
     };
@@ -163,14 +177,23 @@ export const updateScenario = (id: string, updates: UpdateScenarioInput): Storag
     
     const existingScenario = getResult.data;
     
-    // Apply updates
+    // Apply updates to content carefully
+    let updatedContent = existingScenario.content;
+    if (updates.content) {
+      updatedContent = {
+        ...existingScenario.content,
+        ...updates.content,
+        schemaVersion: CURRENT_SCHEMA_VERSION
+      };
+    }
+    // Recalculate completion status after content update
+    updatedContent.completionStatus = getScenarioCompletionStatus(updatedContent);
+
     const updatedScenario: Scenario = {
       ...existingScenario,
       name: updates.name !== undefined ? updates.name : existingScenario.name,
       description: updates.description !== undefined ? updates.description : existingScenario.description,
-      content: updates.content !== undefined 
-        ? { ...updates.content, schemaVersion: CURRENT_SCHEMA_VERSION } 
-        : existingScenario.content,
+      content: updatedContent,
       updatedAt: new Date()
     };
     
@@ -286,7 +309,8 @@ export const getScenarioList = (): StorageOperationResult<ScenarioListItem[]> =>
       createdAt: scenario.createdAt.toISOString(),
       updatedAt: scenario.updatedAt.toISOString(),
       originCountry: scenario.content.originCountry,
-      destinationCountry: scenario.content.destinationCountry
+      destinationCountry: scenario.content.destinationCountry,
+      completionStatus: scenario.content.completionStatus || 'draft'
     }));
     
     // Sort by updatedAt, most recent first
@@ -310,29 +334,27 @@ export const getScenarioList = (): StorageOperationResult<ScenarioListItem[]> =>
 export const duplicateScenario = (id: string, newName?: string): StorageOperationResult<Scenario> => {
   try {
     const getResult = getScenario(id);
-    
     if (!getResult.success || !getResult.data) {
-      return {
-        success: false,
-        error: getResult.error || `Scenario with ID ${id} not found`
-      };
+      return { success: false, error: getResult.error };
     }
-    
-    const sourceScenario = getResult.data;
+    const originalScenario = getResult.data;
     const now = new Date();
-    
-    // Create a copy with a new ID and updated timestamps
-    const newScenario: Scenario = {
-      ...sourceScenario,
+
+    const duplicatedContent = { ...originalScenario.content };
+    // Recalculate completion status for the duplicated content
+    duplicatedContent.completionStatus = getScenarioCompletionStatus(duplicatedContent);
+
+    const duplicatedScenario: Scenario = {
+      ...originalScenario,
       id: uuidv4(),
-      name: newName || `${sourceScenario.name} (Copy)`,
+      name: newName || `${originalScenario.name} (Copy)`,
+      content: duplicatedContent,
       createdAt: now,
       updatedAt: now
     };
-    
-    // Save the new scenario
-    const storageItem = prepareForStorage(newScenario);
-    const saveResult = setStorageItem(newScenario.id, storageItem, SCENARIOS_NAMESPACE);
+
+    const storageItem = prepareForStorage(duplicatedScenario);
+    const saveResult = setStorageItem(duplicatedScenario.id, storageItem, SCENARIOS_NAMESPACE);
     
     if (!saveResult.success) {
       return {
@@ -343,7 +365,7 @@ export const duplicateScenario = (id: string, newName?: string): StorageOperatio
 
     return {
       success: true,
-      data: newScenario
+      data: duplicatedScenario
     };
   } catch (error) {
     return {
@@ -438,62 +460,75 @@ export const exportScenarios = (): StorageOperationResult<string> => {
  */
 export const importScenarios = (jsonData: string, overwrite = false): StorageOperationResult<ScenarioMap> => {
   try {
-    const importedItems = JSON.parse(jsonData) as ScenarioStorageItem[];
-    
-    if (!Array.isArray(importedItems)) {
-      return {
-        success: false,
-        error: 'Invalid import data format. Expected an array of scenarios.'
+    const importedData = JSON.parse(jsonData) as { scenarios?: ScenarioStorageItem[], scenarioMap?: Record<string, ScenarioStorageItem> };
+    let itemsToImport: ScenarioStorageItem[] = [];
+
+    if (importedData.scenarios) { // Handles array format
+      itemsToImport = importedData.scenarios;
+    } else if (importedData.scenarioMap) { // Handles map format (potentially older exports)
+      itemsToImport = Object.values(importedData.scenarioMap);
+    }
+
+    if (itemsToImport.length === 0) {
+      return { success: false, error: 'No scenarios found in the imported JSON data.' };
+    }
+
+    const successfullyImported: ScenarioMap = {};
+    const errors: string[] = [];
+
+    // Get existing scenario IDs if not overwriting
+    const existingKeysResult = getStorageKeys(SCENARIOS_NAMESPACE);
+    let actualExistingKeys: string[] = [];
+    if (existingKeysResult.success && existingKeysResult.data) {
+      actualExistingKeys = existingKeysResult.data;
+    }
+
+    for (const item of itemsToImport) {
+      if (!item.id || !item.content) {
+        errors.push(`Skipping item due to missing id or content: ${JSON.stringify(item)}`);
+        continue;
+      }
+
+      if (!overwrite && actualExistingKeys.includes(item.id)) {
+        errors.push(`Skipping existing scenario ID (overwrite is false): ${item.id}`);
+        continue;
+      }
+
+      // Ensure content has completionStatus and calculate it
+      const scenarioContentToImport: ScenarioContent = item.content;
+      if (typeof scenarioContentToImport.completionStatus === 'undefined') {
+        scenarioContentToImport.completionStatus = 'draft'; // Set a default if missing
+      }
+      scenarioContentToImport.completionStatus = getScenarioCompletionStatus(scenarioContentToImport);
+      
+      // Ensure schema version is current or migrate if necessary (simplified for now)
+      const finalItemToStore: ScenarioStorageItem = {
+        ...item,
+        content: scenarioContentToImport,
+        schemaVersion: CURRENT_SCHEMA_VERSION, // Force current schema version on import
+        // Ensure dates are in ISO string format for storage
+        createdAt: item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString(),
+        updatedAt: item.updatedAt ? new Date(item.updatedAt).toISOString() : new Date().toISOString(),
       };
-    }
-    
-    const importedScenarios: ScenarioMap = {};
-    
-    // If not overwriting, check for ID conflicts
-    if (!overwrite) {
-      const existingScenariosResult = listScenarios();
       
-      if (existingScenariosResult.success && existingScenariosResult.data) {
-        const existingIds = Object.keys(existingScenariosResult.data);
-        
-        for (const item of importedItems) {
-          if (existingIds.includes(item.id)) {
-            return {
-              success: false,
-              error: `Scenario ID conflict: ${item.id} already exists. Use overwrite=true to replace existing scenarios.`
-            };
-          }
-        }
+      const saveResult = setStorageItem(finalItemToStore.id, finalItemToStore, SCENARIOS_NAMESPACE);
+      if (saveResult.success) {
+        successfullyImported[finalItemToStore.id] = hydrateFromStorage(finalItemToStore);
+      } else {
+        errors.push(`Failed to save scenario ${finalItemToStore.id}: ${saveResult.error}`);
       }
     }
-    
-    // Validate and migrate schemas if needed
-    for (const item of importedItems) {
-      // Handle schema migration if needed
-      if (item.schemaVersion < CURRENT_SCHEMA_VERSION) {
-        // Implement schema migration logic here
-        // For example: item = migrateSchema(item);
-      }
-      
-      // Save the imported scenario
-      const scenario = hydrateFromStorage(item);
-      const storageItem = prepareForStorage(scenario);
-      const saveResult = setStorageItem(scenario.id, storageItem, SCENARIOS_NAMESPACE);
-      
-      if (!saveResult.success) {
-        return {
-          success: false,
-          error: `Error importing scenario ${scenario.id}: ${saveResult.error}`
-        };
-      }
-      
-      importedScenarios[scenario.id] = scenario;
+
+    if (Object.keys(successfullyImported).length === 0 && errors.length > 0) {
+      return { success: false, error: `Import failed. Errors: ${errors.join('; ')}` };
     }
-    
+
     return {
       success: true,
-      data: importedScenarios
+      data: successfullyImported,
+      error: errors.length > 0 ? `Partial import with errors: ${errors.join('; ')}` : undefined
     };
+
   } catch (error) {
     return {
       success: false,
@@ -513,150 +548,41 @@ export const createTemplateScenario = (
   console.log('scenarioStorage: createTemplateScenario called', { name, originCountry, destinationCountry });
   try {
     const now = new Date();
-    const id = uuidv4();
+    const scenarioName = name || generateScenarioName(originCountry, destinationCountry);
     
-    // Create a new scenario with template data
+    // Define the full template content structure here
+    const templateContent: ScenarioContent = {
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      originCountry,
+      destinationCountry,
+      household: { ...DEFAULT_HOUSEHOLD_COMPOSITION },
+      incomeSources: [ ...DEFAULT_INCOME_SOURCES ],
+      housingType: HousingType.RENT,
+      housingExpense: { ...DEFAULT_HOUSING_EXPENSE[HousingType.RENT] },
+      educationExpenses: {},
+      healthcareType: HealthcareType.PUBLIC,
+      healthcareExpenses: {},
+      transportType: TransportType.PUBLIC,
+      transportExpense: { ...DEFAULT_TRANSPORT_EXPENSE[TransportType.PUBLIC] },
+      lifestyleExpenses: [ ...DEFAULT_LIFESTYLE_EXPENSES ],
+      utilityExpenses: { ...DEFAULT_UTILITY_EXPENSES },
+      emergencyFund: { ...DEFAULT_EMERGENCY_FUND },
+      fxSettings: DEFAULT_FX_SETTINGS[destinationCountry] || DEFAULT_FX_SETTINGS.EUR,
+      completionStatus: 'draft'
+    };
+
+    // Calculate completion status for the template content
+    templateContent.completionStatus = getScenarioCompletionStatus(templateContent);
+
     const scenario: Scenario = {
-      id,
-      name: name || generateScenarioName(originCountry, destinationCountry),
-      description: `Comparing cost of living between ${originCountry} and ${destinationCountry}`,
-      content: {
-        schemaVersion: CURRENT_SCHEMA_VERSION,
-        originCountry,
-        destinationCountry,
-        
-        // Required properties with default values
-        household: {
-          id: `household-${id}`,
-          name: "My Household",
-          members: [],
-          originCountry,
-          destinationCountry,
-          residencyStatus: ResidencyType.PERMANENT_RESIDENT,
-          taxRegime: TaxRegimeType.STANDARD,
-          size: 1,
-          dependents: 0,
-          createdAt: now,
-          updatedAt: now
-        },
-        incomeSources: [],
-        housingType: HousingType.RENT,
-        housingExpense: {
-          id: `housing-${id}`,
-          type: HousingType.RENT,
-          address: {
-            line1: "",
-            city: "",
-            region: "",
-            postalCode: "",
-            country: destinationCountry
-          },
-          mainCost: {
-            amount: 0,
-            currency: CurrencyCode.USD,
-            frequency: FrequencyType.MONTHLY
-          },
-          furnished: false,
-          bedrooms: 1,
-          bathrooms: 1,
-          createdAt: now,
-          updatedAt: now
-        },
-        educationExpenses: {},
-        healthcareType: HealthcareType.PUBLIC,
-        healthcareExpenses: {},
-        transportType: TransportType.PUBLIC,
-        transportExpense: {
-          id: `transport-${id}`,
-          type: TransportType.PUBLIC,
-          mainCost: {
-            amount: 0,
-            currency: CurrencyCode.USD,
-            frequency: FrequencyType.MONTHLY
-          },
-          isCommute: true,
-          createdAt: now,
-          updatedAt: now
-        },
-        lifestyleExpenses: [],
-        utilityExpenses: {
-          [UtilityServiceType.ELECTRICITY]: {
-            id: `util-elec-${id}`,
-            createdAt: now,
-            updatedAt: now,
-            type: UtilityServiceType.ELECTRICITY,
-            provider: 'Default Provider',
-            planType: UtilityPlanType.FIXED,
-            baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY },
-            included: false,
-          },
-          [UtilityServiceType.WATER]: {
-            id: `util-water-${id}`,
-            createdAt: now,
-            updatedAt: now,
-            type: UtilityServiceType.WATER,
-            provider: 'Default Provider',
-            planType: UtilityPlanType.FIXED,
-            baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY },
-            included: false,
-          },
-          [UtilityServiceType.GAS]: {
-            id: `util-gas-${id}`,
-            createdAt: now,
-            updatedAt: now,
-            type: UtilityServiceType.GAS,
-            provider: 'Default Provider',
-            planType: UtilityPlanType.FIXED,
-            baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY },
-            included: false,
-          },
-          [UtilityServiceType.INTERNET]: {
-            id: `util-internet-${id}`,
-            createdAt: now,
-            updatedAt: now,
-            type: UtilityServiceType.INTERNET,
-            provider: 'Default Provider',
-            planType: UtilityPlanType.FIXED,
-            baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY },
-            included: false,
-          },
-          [UtilityServiceType.MOBILE]: {
-            id: `util-mobile-${id}`,
-            createdAt: now,
-            updatedAt: now,
-            type: UtilityServiceType.MOBILE,
-            provider: 'Default Provider',
-            planType: UtilityPlanType.FIXED,
-            baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY },
-            included: false,
-          }
-        },
-        emergencyFund: {
-          id: `emergency-${id}`,
-          createdAt: now,
-          updatedAt: now,
-          targetMonths: 3,
-          currentBalance: { amount: 0, currency: CurrencyCode.USD },
-          monthlyContribution: { amount: 0, currency: CurrencyCode.USD },
-          minimumBalance: { amount: 0, currency: CurrencyCode.USD },
-          location: 'Default Savings Account',
-          isLiquid: true
-        },
-        fxSettings: {
-          baseCurrency: CurrencyCode.USD,
-          displayCurrency: CurrencyCode.USD,
-          manualRates: false,
-          customRates: {},
-          sensitivityRange: [-0.1, 0.1]
-        }
-      },
+      id: uuidv4(),
+      name: scenarioName,
+      description: `Template for ${destinationCountry} from ${originCountry}`,
+      content: templateContent,
       createdAt: now,
       updatedAt: now
     };
-    
-    console.log('scenarioStorage: created template scenario object', scenario.id);
 
-    // Store the scenario
     const storageItem = prepareForStorage(scenario);
     const saveResult = setStorageItem(scenario.id, storageItem, SCENARIOS_NAMESPACE);
     

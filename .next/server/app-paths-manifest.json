@@ -1,10 +1,6 @@
 {
-  "/components/page": "app/components/page.js",
-  "/dev/demos/page": "app/dev/demos/page.js",
-  "/demo/forex/page": "app/demo/forex/page.js",
-  "/components/interactive/page": "app/components/interactive/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/page": "app/page.js",
-  "/api/fx/latest/route": "app/api/fx/latest/route.js",
   "/(authenticated)/profile/page": "app/(authenticated)/profile/page.js",
-  "/(authenticated)/scenarios/create/page": "app/(authenticated)/scenarios/create/page.js"
+  "/(authenticated)/dashboard/page": "app/(authenticated)/dashboard/page.js"
 }

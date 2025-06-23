@@ -53,7 +53,14 @@ export const ScenarioCard: React.FC<ScenarioCardProps> = ({
         <div className="p-6 flex flex-col h-full">
           <div className="flex justify-between items-start mb-2">
             <h3 className="font-semibold text-lg line-clamp-1">{scenario.name}</h3>
-            <div className="dropdown dropdown-end">
+            {/* Completion Status Badge */}
+            {scenario.completionStatus === 'draft' && (
+              <div className="badge badge-warning ml-2">Draft</div>
+            )}
+            {scenario.completionStatus === 'complete' && (
+              <div className="badge badge-success ml-2">Complete</div>
+            )}
+            <div className="dropdown dropdown-end ml-auto">
               <label tabIndex={0} className="btn btn-ghost btn-sm btn-square">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-5 h-5 stroke-current">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
@@ -73,6 +80,7 @@ export const ScenarioCard: React.FC<ScenarioCardProps> = ({
 
           <div className="flex items-center mt-auto pt-4">
             <div className="flex gap-1">
+              {/* Country Badges */}
               <div className="badge badge-outline">{scenario.originCountry}</div>
               <div className="badge badge-outline">{scenario.destinationCountry}</div>
             </div>

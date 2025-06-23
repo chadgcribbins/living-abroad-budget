@@ -1,145 +1,37 @@
 import { useStore } from './index'
-import { RootState } from './types'
-import { useCallback, useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import { CountryCode } from '@/types/base'
-import { Household } from '@/types/household'
 
-// Profile selectors
-const getHousehold = (state: RootState) => state.profile?.household || null
-const getIsComplete = (state: RootState) => state.profile?.isComplete || false
-const getActiveCountry = (state: RootState) => state.profile?.activeCountry || null
-
-// Profile hooks
-export const useHousehold = () => useStore(getHousehold)
-export const useIsHouseholdComplete = () => useStore(getIsComplete)
-export const useActiveCountry = () => useStore(getActiveCountry)
-
-// Profile actions hooks
-export const useProfileActions = () => {
-  const setHousehold = useStore((state) => state.profile?.setHousehold || ((_household: Household) => console.warn('Profile state not initialized')))
-  const updateHousehold = useStore((state) => state.profile?.updateHousehold || ((_updates: Partial<Household>) => console.warn('Profile state not initialized')))
-  const clearHousehold = useStore((state) => state.profile?.clearHousehold || (() => console.warn('Profile state not initialized')))
-  const setActiveCountry = useStore((state) => state.profile?.setActiveCountry || ((_country: CountryCode) => console.warn('Profile state not initialized')))
-  
-  return {
-    setHousehold,
-    updateHousehold,
-    clearHousehold,
-    setActiveCountry
-  }
-}
-
-// Combined profile hook for all profile state and actions
+// Profile hooks - simplified
 export const useProfile = () => {
-  const household = useHousehold()
-  const isComplete = useIsHouseholdComplete()
-  const activeCountry = useActiveCountry()
-  const actions = useProfileActions()
+  const profile = useStore((state) => state.profile);
   
   return {
-    household,
-    isComplete,
-    activeCountry,
-    ...actions
-  }
-}
+    household: profile.household,
+    isComplete: profile.isComplete,
+    activeCountry: profile.activeCountry,
+    isHydrated: profile.isHydrated,
+    // Actions
+    setHousehold: profile.setHousehold,
+    updateHousehold: profile.updateHousehold,
+    updateHouseholdMembers: profile.updateHouseholdMembers,
+    clearHousehold: profile.clearHousehold,
+    setActiveCountry: profile.setActiveCountry,
+    setHydrated: profile.setHydrated,
+  };
+};
 
-// Example of a memoized selector for derived state
-export const useHouseholdSize = () => {
-  const household = useHousehold()
-  
-  return useMemo(() => {
-    if (!household) return { members: 0, dependents: 0 }
-    
-    const members = household.members?.length || 0
-    const dependents = household.members?.filter(m => m.isDependent)?.length || 0
-    
-    return { members, dependents }
-  }, [household])
-}
-
-// Example of custom action with state computation
-export const useSwitchCountry = () => {
-  const { setActiveCountry } = useProfileActions()
-  const activeCountry = useActiveCountry()
-  const household = useHousehold()
-  
-  return useCallback((targetCountry?: CountryCode) => {
-    // If explicit country provided, use it
-    if (targetCountry) {
-      setActiveCountry(targetCountry)
-      return
-    }
-    
-    // Otherwise toggle between origin/destination
-    if (household?.originCountry && household?.destinationCountry) {
-      const currentActiveCountry = useStore.getState().profile?.activeCountry
-      
-      if (currentActiveCountry === household.originCountry) {
-        setActiveCountry(household.destinationCountry)
-      } else {
-        setActiveCountry(household.originCountry)
-      }
-    }
-  }, [setActiveCountry, household, activeCountry])
-}
-
-/**
- * Hook to access the scenario state and actions from the store
- * @returns Scenario state and actions
- */
-export const useScenarioStore = () => {
-  const state = useStore();
-  
-  // Enhanced debugging to see the exact structure
-  console.log('useScenarioStore debug:', {
-    hasScenarios: !!state.scenarios,
-    scenariosType: state.scenarios ? typeof state.scenarios : 'undefined',
-    scenariosKeys: state.scenarios ? Object.keys(state.scenarios) : [],
-    scenariosValue: state.scenarios,
-    stateKeys: Object.keys(state),
-  });
-  
-  // Check if scenarios slice exists and is properly initialized
-  if (!state.scenarios) {
-    console.error('Scenarios slice is missing from the store!');
-    return {
-      scenarios: {},
-      activeScenarioId: null,
-      isLoading: false,
-      error: 'Scenarios slice was not properly initialized',
-      scenarioList: [],
-      activeScenario: null,
-      loadScenarios: () => console.error('Cannot load scenarios: Store not initialized'),
-      createScenario: () => { 
-        console.error('Cannot create scenario: Store not initialized');
-        return Promise.resolve(null);
-      },
-      getScenario: () => Promise.resolve(null),
-      setActiveScenario: () => {},
-      updateScenario: () => Promise.resolve(false),
-      deleteScenario: () => Promise.resolve(false),
-      duplicateScenario: () => Promise.resolve(null),
-      importScenarios: () => Promise.resolve(0),
-      exportScenarios: () => Promise.resolve(null),
-      clearAllScenarios: () => Promise.resolve(false),
-      createTemplateScenario: () => Promise.resolve(null),
-      refreshStorageStats: () => {},
-      scheduleAutoSave: () => {},
-      setAutosaveEnabled: () => {},
-      fromActiveScenario: () => undefined,
-    };
-  }
-  
-  // Return all scenario-related properties from the RootState
-  return {
-    scenarios: state.scenarios, // The ScenarioMap
+// Scenario hooks - simplified
+export const useScenarios = () => {
+  return useStore((state) => ({
+    scenarios: state.scenarios,
     activeScenarioId: state.activeScenarioId,
+    activeScenario: state.activeScenario,
+    scenarioList: state.scenarioList,
     isLoading: state.isLoading,
     error: state.error,
     storageStats: state.storageStats,
-    activeScenario: state.activeScenario, // Getter
-    scenarioList: state.scenarioList,   // Getter
+    // Actions
     loadScenarios: state.loadScenarios,
     setActiveScenarioId: state.setActiveScenarioId,
     createScenario: state.createScenario,
@@ -152,88 +44,100 @@ export const useScenarioStore = () => {
     refreshStorageStats: state.refreshStorageStats,
     scheduleAutoSave: state.scheduleAutoSave,
     fromActiveScenario: state.fromActiveScenario,
-  };
-}
-
-/**
- * Hook to access UI state from the store
- * @returns UI state and actions
- */
-export const useUIState = () => {
-  const state = useStore();
-  
-  // Check if ui slice and its actions are available
-  const uiReady = state?.ui && typeof state.ui.setActiveView === 'function';
-
-  try {
-    return {
-      activeView: state?.ui?.activeView || 'home',
-      sidebarOpen: state?.ui?.sidebarOpen || true,
-      theme: state?.ui?.theme || 'light',
-      setActiveView: uiReady ? state.ui.setActiveView : undefined,
-      toggleSidebar: uiReady ? state.ui.toggleSidebar : undefined,
-      setTheme: uiReady ? state.ui.setTheme : undefined,
-    };
-  } catch (error) {
-    console.error('Error in useUIState hook:', error);
-    // Return safe defaults with undefined actions
-    return {
-      activeView: 'home',
-      sidebarOpen: true,
-      theme: 'light',
-      setActiveView: undefined,
-      toggleSidebar: undefined,
-      setTheme: undefined,
-    };
-  }
+  }));
 };
 
-/**
- * Hook to access navigation state
- * @returns Navigation-related UI state and actions
- */
+// FX hooks - simplified
+export const useFX = () => {
+  return useStore((state) => ({
+    settings: state.fx.settings,
+    rates: state.fx.rates,
+    isLoading: state.fx.isLoading,
+    error: state.fx.error,
+    lastUpdated: state.fx.lastUpdated,
+    // Actions
+    loadInitialFXData: state.fx.loadInitialFXData,
+    updateFXSettings: state.fx.updateFXSettings,
+    addExchangeRate: state.fx.addExchangeRate,
+    updateExchangeRate: state.fx.updateExchangeRate,
+    getExchangeRate: state.fx.getExchangeRate,
+    convertAmount: state.fx.convertAmount,
+  }));
+};
+
+// UI hooks - simplified
+export const useUI = () => {
+  return useStore((state) => ({
+    activeView: state.ui.activeView,
+    sidebarOpen: state.ui.sidebarOpen,
+    theme: state.ui.theme,
+    // Actions
+    setActiveView: state.ui.setActiveView,
+    toggleSidebar: state.ui.toggleSidebar,
+    setTheme: state.ui.setTheme,
+  }));
+};
+
+// Derived state hooks
+export const useHouseholdSize = () => {
+  const household = useStore((state) => state.profile.household);
+  
+  return useMemo(() => {
+    if (!household) return { members: 0, dependents: 0 };
+    
+    const members = household.members?.length || 0;
+    const dependents = household.members?.filter(m => m.isDependent)?.length || 0;
+    
+    return { members, dependents };
+  }, [household]);
+};
+
+export const useSwitchCountry = () => {
+  const { setActiveCountry } = useProfile();
+  const activeCountry = useStore((state) => state.profile.activeCountry);
+  const household = useStore((state) => state.profile.household);
+  
+  return useCallback((targetCountry?: CountryCode) => {
+    if (targetCountry) {
+      setActiveCountry(targetCountry);
+      return;
+    }
+    
+    if (household?.originCountry && household?.destinationCountry) {
+      if (activeCountry === household.originCountry) {
+        setActiveCountry(household.destinationCountry);
+      } else {
+        setActiveCountry(household.originCountry);
+      }
+    }
+  }, [setActiveCountry, household, activeCountry]);
+};
+
+// Navigation and theme hooks
 export const useNavigation = () => {
-  const state = useStore();
-  const uiReady = state?.ui && typeof state.ui.setActiveView === 'function'; // Assuming setActiveView indicates readiness
-
-  try {
-    return {
-      activeView: state?.ui?.activeView || 'home',
-      sidebarOpen: state?.ui?.sidebarOpen || true,
-      setActiveView: uiReady ? state.ui.setActiveView : undefined,
-      toggleSidebar: uiReady ? state.ui.toggleSidebar : undefined,
-    };
-  } catch (error) {
-    console.error('Error in useNavigation hook:', error);
-    // Return safe defaults with undefined actions
-    return {
-      activeView: 'home',
-      sidebarOpen: true,
-      setActiveView: undefined,
-      toggleSidebar: undefined,
-    };
-  }
+  const ui = useUI();
+  
+  return {
+    activeView: ui.activeView,
+    sidebarOpen: ui.sidebarOpen,
+    setActiveView: ui.setActiveView,
+    toggleSidebar: ui.toggleSidebar,
+  };
 };
 
-/**
- * Hook to access theme state
- * @returns Theme state and actions
- */
 export const useTheme = () => {
-  const state = useStore();
-  const uiReady = state?.ui && typeof state.ui.setTheme === 'function'; // Assuming setTheme indicates readiness
+  const ui = useUI();
   
-  try {
-    return {
-      theme: state?.ui?.theme || 'light',
-      setTheme: uiReady ? state.ui.setTheme : undefined,
-    };
-  } catch (error) {
-    console.error('Error in useTheme hook:', error);
-    // Return safe defaults with undefined actions
-    return {
-      theme: 'light',
-      setTheme: undefined,
-    };
-  }
-}; 
+  return {
+    theme: ui.theme,
+    setTheme: ui.setTheme,
+  };
+};
+
+// Legacy compatibility exports
+export const useScenarioStore = useScenarios;
+export const useUIState = useUI;
+export const useHousehold = () => useStore((state) => state.profile.household);
+export const useIsHouseholdComplete = () => useStore((state) => state.profile.isComplete);
+export const useActiveCountry = () => useStore((state) => state.profile.activeCountry);
+export const useIsProfileHydrated = () => useStore((state) => state.profile.isHydrated); 

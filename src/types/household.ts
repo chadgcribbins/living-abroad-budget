@@ -8,7 +8,6 @@ export interface HouseholdMember extends Identifiable {
   lastName: string;
   dateOfBirth: Date;
   relationship: HouseholdRelationship;
-  occupation?: string;
   isDependent: boolean;
 }
 
@@ -26,7 +25,6 @@ export enum HouseholdRelationship {
  * Represents the complete household configuration
  */
 export interface Household extends Identifiable, Timestamped {
-  name: string;
   members: HouseholdMember[];
   originCountry: CountryCode;
   destinationCountry: CountryCode;

@@ -8,12 +8,11 @@ import { Button, Input, Select } from '@/components/ui';
 import { CountryCode } from '@/types/base';
 import { COUNTRIES } from '@/utils/constants';
 
-interface ScenarioListProps {
+export interface ScenarioListProps {
   scenarios: ScenarioListItem[];
   onCreateScenario: (data: {
     name: string;
     description: string;
-    originCountry: CountryCode;
     destinationCountry: CountryCode;
   }) => Promise<void>;
   onDeleteScenario: (id: string) => Promise<void>;
@@ -37,20 +36,23 @@ export const ScenarioList: React.FC<ScenarioListProps> = ({
   const [sortBy, setSortBy] = useState<SortOption>('updatedAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [countryFilter, setCountryFilter] = useState<CountryCode | ''>('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'complete'>('all');
 
   // Filter and sort scenarios
   const filteredAndSortedScenarios = useMemo(() => {
-    // First filter by search term and country
+    // First filter by search term, country, and status
     const filtered = scenarios.filter((scenario) => {
       const matchesSearch = searchTerm === '' || 
         scenario.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (scenario.description && scenario.description.toLowerCase().includes(searchTerm.toLowerCase()));
       
       const matchesCountry = countryFilter === '' || 
-        scenario.originCountry === countryFilter || 
         scenario.destinationCountry === countryFilter;
       
-      return matchesSearch && matchesCountry;
+      const matchesStatus = statusFilter === 'all' || 
+        scenario.completionStatus === statusFilter;
+      
+      return matchesSearch && matchesCountry && matchesStatus;
     });
 
     // Then sort
@@ -67,14 +69,13 @@ export const ScenarioList: React.FC<ScenarioListProps> = ({
       
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [scenarios, searchTerm, sortBy, sortDirection, countryFilter]);
+  }, [scenarios, searchTerm, sortBy, sortDirection, countryFilter, statusFilter]);
 
   // Get unique countries from all scenarios for the filter dropdown
   const uniqueCountries = useMemo(() => {
     const countries = new Set<CountryCode>();
     
     scenarios.forEach((scenario) => {
-      countries.add(scenario.originCountry);
       countries.add(scenario.destinationCountry);
     });
     
@@ -127,6 +128,18 @@ export const ScenarioList: React.FC<ScenarioListProps> = ({
                 value: country, 
                 label: COUNTRIES[country] || country
               }))
+            ]}
+          />
+
+          {/* Status filter */}
+          <Select 
+            value={statusFilter} 
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value as 'all' | 'draft' | 'complete')}
+            className="w-full sm:w-48"
+            options={[
+              { value: 'all', label: 'All Statuses' },
+              { value: 'draft', label: 'Draft' },
+              { value: 'complete', label: 'Complete' },
             ]}
           />
         </div>

@@ -40,10 +40,11 @@ import {
 
 import {
   Household
-} from '@/types/household'
+} from './household'
 
-import { HealthcareType, FXSettings } from '@/store/types'
-import { UtilityServiceType } from '@/types/utilities'
+import { HealthcareCoverageType as HealthcareType } from './healthcare'
+import { FXSettings } from '@/store/types'
+import { UtilityServiceType } from './utilities'
 
 /**
  * Schema version for managing data migrations
@@ -76,6 +77,7 @@ export interface ScenarioContent extends SchemaVersioned {
   utilityExpenses: Partial<Record<UtilityServiceType, UtilityExpense>>;
   emergencyFund: EmergencyFund;
   fxSettings: FXSettings;
+  completionStatus: 'draft' | 'complete';
 }
 
 /**
@@ -134,6 +136,7 @@ export interface ScenarioListItem {
   updatedAt: string;
   originCountry: CountryCode;
   destinationCountry: CountryCode;
+  completionStatus: 'draft' | 'complete';
 }
 
 /**

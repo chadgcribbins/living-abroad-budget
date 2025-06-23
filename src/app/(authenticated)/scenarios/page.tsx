@@ -3,18 +3,22 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ScenarioList } from '@/components/scenarios/ScenarioList';
-import { useScenarioStore } from '@/store/hooks';
+import { useScenarioStore, useProfile } from '@/store/hooks';
 import { useStore } from '@/store';
 import { toast } from '@/components/ui';
 import { CountryCode, ResidencyType, TaxRegimeType, CurrencyCode, FrequencyType } from '@/types/base';
-import { CURRENT_SCHEMA_VERSION } from '@/types/scenario';
-import { HousingType } from '@/types/housing';
-import { HealthcareType } from '@/store/types';
-import { TransportType } from '@/types/transport';
-import { UtilityPlanType, UtilityExpense, UtilityServiceType } from '@/types/utilities';
+import { CURRENT_SCHEMA_VERSION, CreateScenarioInput, ScenarioContent } from '@/types/scenario';
+import { HousingType, HousingExpense } from '@/types/housing';
+import { HealthcareCoverageType } from '@/types/healthcare';
+import { TransportType, TransportExpense } from '@/types/transport';
+import { EmergencyFund } from '@/types/emergency';
+import { FXSettings } from '@/store/types';
+import { v4 as uuidv4 } from 'uuid';
+import { Household, HouseholdMember } from '@/types/household';
 
 export default function ScenariosPage() {
   const router = useRouter();
+  const { household } = useProfile();
   const { 
     scenarioList,
     loadScenarios,
@@ -25,9 +29,8 @@ export default function ScenariosPage() {
     error 
   } = useScenarioStore();
 
-  // Log the store state for debugging
-  console.log('ScenariosPage: Store state:', useStore.getState());
-  console.log('ScenariosPage: scenarioList:', scenarioList);
+  console.log('ScenariosPage (src/app/(authenticated)/scenarios/page.tsx): Store state:', useStore.getState());
+  console.log('ScenariosPage (src/app/(authenticated)/scenarios/page.tsx): scenarioList:', scenarioList);
 
   const [isLoading, setIsLoading] = useState(true);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -36,11 +39,11 @@ export default function ScenariosPage() {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        console.log('ScenariosPage: Loading scenarios...');
+        console.log('ScenariosPage (src/app/(authenticated)/scenarios/page.tsx): Loading scenarios...');
         loadScenarios();
-        console.log('ScenariosPage: Scenarios loaded successfully');
+        console.log('ScenariosPage (src/app/(authenticated)/scenarios/page.tsx): Scenarios loaded successfully');
       } catch (error) {
-        console.error('ScenariosPage: Error loading scenarios:', error);
+        console.error('ScenariosPage (src/app/(authenticated)/scenarios/page.tsx): Error loading scenarios:', error);
         setLocalError(error instanceof Error ? error.message : 'Failed to load scenarios');
         toast({
           title: 'Error',
@@ -58,185 +61,116 @@ export default function ScenariosPage() {
   const handleCreateScenario = async (data: {
     name: string;
     description: string;
-    originCountry: CountryCode;
     destinationCountry: CountryCode;
   }) => {
+    setIsLoading(true);
     try {
-      console.log('Creating scenario with data:', data);
+      console.log('ScenariosPage (src/app/(authenticated)/scenarios/page.tsx): Creating scenario with data from modal:', data);
       
-      // Transform the data to match the expected CreateScenarioInput type
-      const scenarioInput = {
+      const profileOriginCountry = household?.originCountry || CountryCode.GB;
+      console.log('ScenariosPage (src/app/(authenticated)/scenarios/page.tsx): Using origin country from profile (or default GB):', profileOriginCountry);
+
+      const scenarioInput: CreateScenarioInput = {
         name: data.name,
         description: data.description,
         content: {
           schemaVersion: CURRENT_SCHEMA_VERSION,
-          originCountry: data.originCountry,
+          originCountry: profileOriginCountry,
           destinationCountry: data.destinationCountry,
-          // Initialize with empty/default values for required fields
+          completionStatus: 'draft',
           household: {
-            id: '',
-            members: [],
-            originCountry: data.originCountry,
-            destinationCountry: data.destinationCountry,
+            id: uuidv4(),
             createdAt: new Date(),
             updatedAt: new Date(),
-            name: 'My Household',
-            residencyStatus: ResidencyType.CITIZEN,
-            taxRegime: TaxRegimeType.STANDARD,
-            size: 1,
-            dependents: 0
-          },
+            name: `Household for ${data.name}`,
+            members: household?.members || [],
+            originCountry: profileOriginCountry,
+            destinationCountry: data.destinationCountry,
+            residencyStatus: household?.residencyStatus || ResidencyType.TEMPORARY_RESIDENT,
+            taxRegime: household?.taxRegime || TaxRegimeType.STANDARD,
+            size: household?.members?.length || 0,
+            dependents: household?.members?.filter((m: HouseholdMember) => m.isDependent).length || 0,
+          } as Household,
           incomeSources: [],
           housingType: HousingType.RENT,
           housingExpense: {
-            id: '',
+            id: uuidv4(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
             type: HousingType.RENT,
-            address: {
-              line1: '',
-              city: '',
-              postalCode: '',
-              country: data.destinationCountry
-            },
-            mainCost: {
-              amount: 0,
-              currency: CurrencyCode.USD,
-              frequency: FrequencyType.MONTHLY
-            },
-            cost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY },
+            address: { line1: '', city: '', postalCode: '', country: data.destinationCountry },
+            mainCost: { amount: 0, currency: CurrencyCode.EUR, frequency: FrequencyType.MONTHLY },
+            cost: { amount: 0, currency: CurrencyCode.EUR, frequency: FrequencyType.MONTHLY },
             size: 0,
-            bedrooms: 1,
-            bathrooms: 1,
+            bedrooms: 0,
+            bathrooms: 0,
             furnished: false,
             utilities: [],
             insurance: [],
-            createdAt: new Date(),
-            updatedAt: new Date()
-          },
+          } as HousingExpense,
           educationExpenses: {},
-          healthcareType: HealthcareType.PUBLIC,
+          healthcareType: HealthcareCoverageType.PUBLIC,
           healthcareExpenses: {},
           transportType: TransportType.PUBLIC,
           transportExpense: {
-            id: '',
+            id: uuidv4(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
             type: TransportType.PUBLIC,
-            mainCost: {
-              amount: 0,
-              currency: CurrencyCode.USD,
-              frequency: FrequencyType.MONTHLY
-            },
+            mainCost: { amount: 0, currency: CurrencyCode.EUR, frequency: FrequencyType.MONTHLY },
             costs: [],
             isCommute: false,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          },
+          } as TransportExpense,
           lifestyleExpenses: [],
-          utilityExpenses: {
-            // Initialize using UtilityServiceType enum as keys
-            [UtilityServiceType.ELECTRICITY]: {
-              id: '', type: UtilityServiceType.ELECTRICITY, provider: '', planType: UtilityPlanType.VARIABLE, 
-              baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY }, included: false,
-              createdAt: new Date(), updatedAt: new Date()
-            } as UtilityExpense,
-            [UtilityServiceType.GAS]: {
-              id: '', type: UtilityServiceType.GAS, provider: '', planType: UtilityPlanType.VARIABLE, 
-              baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY }, included: false,
-              createdAt: new Date(), updatedAt: new Date()
-            } as UtilityExpense,
-            [UtilityServiceType.WATER]: {
-              id: '', type: UtilityServiceType.WATER, provider: '', planType: UtilityPlanType.VARIABLE, 
-              baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY }, included: false,
-              createdAt: new Date(), updatedAt: new Date()
-            } as UtilityExpense,
-            [UtilityServiceType.SEWAGE]: {
-              id: '', type: UtilityServiceType.SEWAGE, provider: '', planType: UtilityPlanType.FIXED, 
-              baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY }, included: false,
-              createdAt: new Date(), updatedAt: new Date()
-            } as UtilityExpense,
-            [UtilityServiceType.INTERNET]: {
-              id: '', type: UtilityServiceType.INTERNET, provider: '', planType: UtilityPlanType.FIXED, 
-              baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY }, included: false,
-              createdAt: new Date(), updatedAt: new Date()
-            } as UtilityExpense,
-            [UtilityServiceType.MOBILE]: {
-              id: '', type: UtilityServiceType.MOBILE, provider: '', planType: UtilityPlanType.FIXED, 
-              baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY }, included: false,
-              createdAt: new Date(), updatedAt: new Date()
-            } as UtilityExpense,
-            [UtilityServiceType.LANDLINE]: {
-              id: '', type: UtilityServiceType.LANDLINE, provider: '', planType: UtilityPlanType.FIXED, 
-              baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY }, included: false,
-              createdAt: new Date(), updatedAt: new Date()
-            } as UtilityExpense,
-            [UtilityServiceType.TV]: {
-              id: '', type: UtilityServiceType.TV, provider: '', planType: UtilityPlanType.FIXED, 
-              baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY }, included: false,
-              createdAt: new Date(), updatedAt: new Date()
-            } as UtilityExpense,
-            [UtilityServiceType.STREAMING]: {
-              id: '', type: UtilityServiceType.STREAMING, provider: '', planType: UtilityPlanType.FIXED, 
-              baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY }, included: false,
-              createdAt: new Date(), updatedAt: new Date()
-            } as UtilityExpense,
-            [UtilityServiceType.TRASH]: {
-              id: '', type: UtilityServiceType.TRASH, provider: '', planType: UtilityPlanType.FIXED, 
-              baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY }, included: false,
-              createdAt: new Date(), updatedAt: new Date()
-            } as UtilityExpense,
-            [UtilityServiceType.RECYCLING]: {
-              id: '', type: UtilityServiceType.RECYCLING, provider: '', planType: UtilityPlanType.FIXED, 
-              baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY }, included: false,
-              createdAt: new Date(), updatedAt: new Date()
-            } as UtilityExpense,
-            [UtilityServiceType.OTHER]: {
-              id: '', type: UtilityServiceType.OTHER, provider: '', planType: UtilityPlanType.VARIABLE, 
-              baseCost: { amount: 0, currency: CurrencyCode.USD, frequency: FrequencyType.MONTHLY }, included: false,
-              createdAt: new Date(), updatedAt: new Date()
-            } as UtilityExpense,
-          } as Record<UtilityServiceType, UtilityExpense>,
+          utilityExpenses: {},
           emergencyFund: {
-            id: '',
+            id: uuidv4(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
             targetMonths: 3,
-            currentBalance: { amount: 0, currency: CurrencyCode.USD },
-            monthlyContribution: { amount: 0, currency: CurrencyCode.USD },
-            minimumBalance: { amount: 0, currency: CurrencyCode.USD },
+            currentBalance: { amount: 0, currency: CurrencyCode.EUR },
+            monthlyContribution: { amount: 0, currency: CurrencyCode.EUR },
+            minimumBalance: { amount: 0, currency: CurrencyCode.EUR },
             location: '',
             isLiquid: true,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          },
+          } as EmergencyFund,
           fxSettings: {
-            baseCurrency: CurrencyCode.USD,
-            displayCurrency: CurrencyCode.USD,
+            baseCurrency: CurrencyCode.EUR,
+            displayCurrency: CurrencyCode.EUR,
+            displayCurrencies: [CurrencyCode.EUR, CurrencyCode.GBP],
             manualRates: false,
             customRates: {},
-            sensitivityRange: [-10, 10] as [number, number],
-          },
-        }
+            sensitivityRange: [-10, 10],
+          } as FXSettings,
+        } as ScenarioContent,
       };
-      
-      console.log('ScenariosPage: Creating scenario with input:', scenarioInput);
+
+      console.log('ScenariosPage (src/app/(authenticated)/scenarios/page.tsx): Full ScenarioInput object prepared:', scenarioInput);
+
       const newScenarioId = await createScenario(scenarioInput);
-      console.log('ScenariosPage: Scenario created with ID:', newScenarioId);
-      
+
       if (newScenarioId) {
         toast({
-          title: 'Success',
-          description: 'New scenario created successfully',
+          title: 'Scenario Created',
+          description: `Successfully created scenario: ${scenarioInput.name}`,
           type: 'success',
         });
-        // Navigate to the new scenario
-        router.push(`/scenarios/${newScenarioId}`);
+        router.push(`/scenario/${newScenarioId}/edit`);
       } else {
-        throw new Error('Failed to create scenario');
+        throw new Error('Scenario creation failed or did not return a valid ID.');
       }
+
     } catch (error) {
-      console.error('Error creating scenario:', error);
-      setLocalError(error instanceof Error ? error.message : 'Failed to create scenario');
+      console.error('ScenariosPage (src/app/(authenticated)/scenarios/page.tsx): Error creating scenario:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create scenario';
+      setLocalError(errorMessage);
       toast({
         title: 'Error',
-        description: 'Failed to create scenario',
+        description: errorMessage,
         type: 'error',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -268,8 +202,9 @@ export default function ScenariosPage() {
           description: 'Scenario duplicated successfully',
           type: 'success',
         });
+        router.push(`/scenario/${newId}/edit`);
       } else {
-        throw new Error('Failed to duplicate scenario');
+        throw new Error('Scenario duplication failed or did not return a valid ID.');
       }
     } catch (error) {
       console.error('Error duplicating scenario:', error);
@@ -290,6 +225,7 @@ export default function ScenariosPage() {
         description: 'Scenario renamed successfully',
         type: 'success',
       });
+      loadScenarios(); // Refresh the list
     } catch (error) {
       console.error('Error renaming scenario:', error);
       setLocalError(error instanceof Error ? error.message : 'Failed to rename scenario');
@@ -300,40 +236,25 @@ export default function ScenariosPage() {
       });
     }
   };
-
+  
   if (isLoading) {
-    return (
-      <div className="container mx-auto py-8 text-center">
-        <div className="loading loading-spinner loading-lg"></div>
-        <p className="mt-4">Loading scenarios...</p>
-      </div>
-    );
+    return <div className="flex justify-center items-center h-screen"><p>Loading scenarios...</p></div>;
   }
 
-  if (error || localError) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="alert alert-error">
-          <div>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Error: {error || localError}</span>
-          </div>
-        </div>
-      </div>
-    );
+  if (localError || error) {
+    return <div className="flex justify-center items-center h-screen text-red-500">
+      <p>Error: {localError || error}</p>
+      <button onClick={() => loadScenarios()} className="ml-4 p-2 bg-blue-500 text-white rounded">
+        Retry
+      </button>
+    </div>;
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Budget Scenarios</h1>
-      </div>
-      
-      <ScenarioList
-        scenarios={scenarioList || []}
-        onCreateScenario={handleCreateScenario}
+    <div className="container mx-auto p-4">
+      <ScenarioList 
+        scenarios={scenarioList} 
+        onCreateScenario={handleCreateScenario} 
         onDeleteScenario={handleDeleteScenario}
         onDuplicateScenario={handleDuplicateScenario}
         onRenameScenario={handleRenameScenario}

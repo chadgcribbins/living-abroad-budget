@@ -27,6 +27,17 @@ export interface UseFXReturn {
   setDisplayCurrency: (currency: CurrencyCode) => void;
 }
 
+// A simple display formatter, can be enhanced later
+const formatCurrency = (amount: number, currency: CurrencyCode, locale: string = 'en-US') => {
+  try {
+    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
+  } catch (error) {
+    // Fallback for invalid currency codes or other errors
+    // console.error(`Error formatting currency ${currency}:`, error);
+    return `${amount.toFixed(2)} ${currency}`;
+  }
+};
+
 /**
  * Custom hook for handling all FX related functionality
  * @returns FX utilities for currency conversion and rate management
@@ -35,15 +46,15 @@ export const useFX = (): UseFXReturn => {
   console.log('[useFX.ts] useFX hook called.');
 
   const {
-    rates,       // Changed from fxRates to rates
-    settings,     
-    isLoading,
-    error: fxError, 
-    lastUpdated,
-    loadInitialFXData,
-    updateFXSettings,
-    convertAmount,
-    getExchangeRate,
+    rates: storeRates,
+    settings: storeSettings,
+    isLoading: storeIsLoading,
+    error: storeError,
+    lastUpdated: storeLastUpdated,
+    loadInitialFXData: storeLoadInitialFXData,
+    updateFXSettings: storeUpdateFXSettings,
+    convertAmount: storeConvertAmount,
+    getExchangeRate: storeGetExchangeRate,
   } = useStore(
     (state) => {
       // console.log('[useFX.ts] Zustand selector running. state.fx:', state.fx); // Potentially too noisy
@@ -52,15 +63,11 @@ export const useFX = (): UseFXReturn => {
     shallow
   );
 
-  console.log('[useFX.ts] Destructured from store - typeof convertAmount:', typeof convertAmount);
-  console.log('[useFX.ts] Destructured from store - typeof getExchangeRate:', typeof getExchangeRate);
-  // console.log('[useFX.ts] isLoading from store:', isLoading, 'lastUpdated:', lastUpdated, 'fxError:', fxError); // Optional detailed log
+  // console.log('[useFX.ts] Destructured from store - typeof storeConvertAmount:', typeof storeConvertAmount);
+  // console.log('[useFX.ts] Destructured from store - typeof storeGetExchangeRate:', typeof storeGetExchangeRate);
 
-  // Local state for error - removed unused setError
-  const [error] = useState<Error | null>(null);
-
-  // Handle settings null case
-  const fxSettings = settings || {
+  // Handle settings null case providing a robust default
+  const safeSettings = storeSettings || {
     baseCurrency: CurrencyCode.USD,
     displayCurrency: CurrencyCode.USD,
     manualRates: false,
@@ -69,116 +76,132 @@ export const useFX = (): UseFXReturn => {
   };
 
   useEffect(() => {
-    console.log('[useFX.ts] useEffect triggered. lastUpdated:', lastUpdated, 'isLoading:', isLoading, 'fxError:', fxError);
-    if (!lastUpdated && !isLoading && !fxError) {
-      console.log('[useFX.ts] useEffect: Conditions met, calling loadInitialFXData.');
-      loadInitialFXData();
+    // console.log('[useFX.ts] useEffect triggered. storeLastUpdated:', storeLastUpdated, 'storeIsLoading:', storeIsLoading, 'storeError:', storeError);
+    if (typeof window !== 'undefined' && !storeLastUpdated && !storeIsLoading && !storeError) {
+      // console.log('[useFX.ts] useEffect: Conditions met, calling storeLoadInitialFXData.');
+      if (typeof storeLoadInitialFXData === 'function') {
+        storeLoadInitialFXData();
+      } else {
+        console.warn('[useFX.ts] storeLoadInitialFXData is not a function in useEffect');
+      }
     } else {
-      console.log('[useFX.ts] useEffect: Conditions NOT met for loadInitialFXData.');
+      // console.log('[useFX.ts] useEffect: Conditions NOT met for storeLoadInitialFXData. typeof window:', typeof window);
     }
-  }, [loadInitialFXData, lastUpdated, isLoading, fxError]);
+  }, [storeLoadInitialFXData, storeLastUpdated, storeIsLoading, storeError]);
 
-  /**
-   * Refreshes the exchange rates by calling the store action.
-   * The store action itself will handle isLoading and error states.
-   */
-  const refreshRates = useCallback(async () => {
-    await loadInitialFXData();
-  }, [loadInitialFXData]);
+  const safeLoadInitialFXData = useCallback(async () => {
+    if (typeof storeLoadInitialFXData === 'function') {
+      return storeLoadInitialFXData();
+    }
+    console.warn('[useFX.ts] safeLoadInitialFXData: storeLoadInitialFXData is not a function.');
+    return Promise.resolve();
+  }, [storeLoadInitialFXData]);
 
-  /**
-   * Converts a Money object to a different currency
-   */
-  const convertMoney = useCallback(
-    (money: Money, toCurrency: CurrencyCode): Money | null => {
-      const convertedAmount = convertAmount(money.amount, money.currency, toCurrency);
-      return convertedAmount !== null ? { amount: convertedAmount, currency: toCurrency } : null;
+  const safeUpdateFXSettings = useCallback((newSettings: Partial<FXSettings>) => {
+    if (typeof storeUpdateFXSettings === 'function') {
+      storeUpdateFXSettings(newSettings);
+    } else {
+      console.warn('[useFX.ts] safeUpdateFXSettings: storeUpdateFXSettings is not a function.');
+    }
+  }, [storeUpdateFXSettings]);
+
+  const safeConvertAmount = useCallback(
+    (amount: number, fromCurrency: CurrencyCode, toCurrency: CurrencyCode): number | null => {
+      if (typeof storeConvertAmount === 'function') {
+        return storeConvertAmount(amount, fromCurrency, toCurrency);
+      }
+      console.warn('[useFX.ts] safeConvertAmount: storeConvertAmount is not a function. Returning null.');
+      return null;
     },
-    [convertAmount]
+    [storeConvertAmount]
   );
 
-  /**
-   * Formats an amount with its currency symbol
-   */
+  const safeGetExchangeRate = useCallback(
+    (fromCurrency: CurrencyCode, toCurrency: CurrencyCode): ExchangeRate | null => {
+      if (typeof storeGetExchangeRate === 'function') {
+        return storeGetExchangeRate(fromCurrency, toCurrency);
+      }
+      console.warn('[useFX.ts] safeGetExchangeRate: storeGetExchangeRate is not a function. Returning null.');
+      return null;
+    },
+    [storeGetExchangeRate]
+  );
+
+  const refreshRates = useCallback(async () => {
+    if (typeof storeLoadInitialFXData === 'function') {
+      await storeLoadInitialFXData();
+    } else {
+      console.warn('[useFX.ts] refreshRates: storeLoadInitialFXData is not a function.');
+    }
+  }, [storeLoadInitialFXData]);
+
+  const convertMoney = useCallback(
+    (money: Money, toCurrency: CurrencyCode): Money | null => {
+      const convertedAmount = safeConvertAmount(money.amount, money.currency, toCurrency);
+      return convertedAmount !== null ? { amount: convertedAmount, currency: toCurrency } : null;
+    },
+    [safeConvertAmount]
+  );
+
   const displayWithCurrency = useCallback(
     (amount: number, currency: CurrencyCode): string => {
-      const formatter = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-      
-      return formatter.format(amount);
+      return formatCurrency(amount, currency);
     },
     []
   );
 
-  /**
-   * Sets manual rate mode on/off
-   */
   const setManualRatesEnabled = useCallback(
     (enabled: boolean) => {
-      updateFXSettings({ manualRates: enabled });
+      safeUpdateFXSettings({ manualRates: enabled });
     },
-    [updateFXSettings]
+    [safeUpdateFXSettings]
   );
 
-  /**
-   * Sets a custom exchange rate
-   */
   const setCustomRate = useCallback(
     (fromCurrency: CurrencyCode, toCurrency: CurrencyCode, rate: number) => {
       if (fromCurrency === toCurrency) return;
-      
-      updateFXSettings({
+      safeUpdateFXSettings({
         customRates: {
-          ...fxSettings.customRates,
+          ...(safeSettings.customRates || {}),
           [`${fromCurrency}-${toCurrency}`]: rate,
         },
       });
     },
-    [fxSettings.customRates, updateFXSettings]
+    [safeSettings.customRates, safeUpdateFXSettings]
   );
 
-  /**
-   * Sets the base currency
-   */
   const setBaseCurrency = useCallback(
     (currency: CurrencyCode) => {
-      updateFXSettings({ baseCurrency: currency });
+      safeUpdateFXSettings({ baseCurrency: currency });
     },
-    [updateFXSettings]
+    [safeUpdateFXSettings]
   );
 
-  /**
-   * Sets the display currency
-   */
   const setDisplayCurrency = useCallback(
     (currency: CurrencyCode) => {
-      updateFXSettings({ displayCurrency: currency });
+      safeUpdateFXSettings({ displayCurrency: currency });
     },
-    [updateFXSettings]
+    [safeUpdateFXSettings]
   );
 
   return {
-    isLoading: isLoading || false,
-    error: fxError || error,
-    rates,
-    settings: fxSettings,
-    lastUpdated,
-    loadInitialFXData,
-    updateFXSettings,
+    isLoading: storeIsLoading || false,
+    error: storeError || null,
+    rates: storeRates || {},
+    settings: safeSettings,
+    lastUpdated: storeLastUpdated || null,
+    loadInitialFXData: safeLoadInitialFXData,
+    updateFXSettings: safeUpdateFXSettings,
     refreshRates,
-    convertAmount,
+    convertAmount: safeConvertAmount,
     convertMoney,
     displayWithCurrency,
-    getExchangeRate,
-    manualRatesEnabled: fxSettings.manualRates,
+    getExchangeRate: safeGetExchangeRate,
+    manualRatesEnabled: safeSettings.manualRates,
     setManualRatesEnabled,
     setCustomRate,
-    baseCurrency: fxSettings.baseCurrency,
-    displayCurrency: fxSettings.displayCurrency,
+    baseCurrency: safeSettings.baseCurrency,
+    displayCurrency: safeSettings.displayCurrency,
     setBaseCurrency,
     setDisplayCurrency,
   };

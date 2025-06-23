@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal, Button, Input, Select } from '@/components/ui';
 import { CountryCode } from '@/types/base';
 import { COUNTRIES } from '@/utils/constants';
+import { useProfile } from '@/store/hooks';
 
 interface CreateScenarioModalProps {
   isOpen: boolean;
@@ -11,16 +12,9 @@ interface CreateScenarioModalProps {
   onSubmit: (data: {
     name: string;
     description: string;
-    originCountry: CountryCode;
     destinationCountry: CountryCode;
   }) => void;
   title?: string;
-  initialValues?: {
-    name: string;
-    description: string;
-    originCountry: CountryCode;
-    destinationCountry: CountryCode;
-  };
 }
 
 export const CreateScenarioModal: React.FC<CreateScenarioModalProps> = ({
@@ -28,15 +22,18 @@ export const CreateScenarioModal: React.FC<CreateScenarioModalProps> = ({
   onClose,
   onSubmit,
   title = 'Create New Scenario',
-  initialValues = {
+}) => {
+  const { household } = useProfile();
+
+  const defaultInitialValues = {
     name: '',
     description: '',
-    originCountry: 'US' as CountryCode,
-    destinationCountry: 'PT' as CountryCode,
-  },
-}) => {
-  const [formData, setFormData] = useState(initialValues);
+    destinationCountry: household?.destinationCountry || ('PT' as CountryCode),
+  };
+
+  const [formData, setFormData] = useState(defaultInitialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -59,10 +56,6 @@ export const CreateScenarioModal: React.FC<CreateScenarioModalProps> = ({
       newErrors.name = 'Scenario name is required';
     }
     
-    if (!formData.originCountry) {
-      newErrors.originCountry = 'Origin country is required';
-    }
-    
     if (!formData.destinationCountry) {
       newErrors.destinationCountry = 'Destination country is required';
     }
@@ -72,16 +65,32 @@ export const CreateScenarioModal: React.FC<CreateScenarioModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     console.log('CreateScenarioModal: handleSubmit called with data:', formData);
     if (validateForm()) {
-      console.log('CreateScenarioModal: validation passed, submitting form');
-      onSubmit(formData);
-      onClose();
+      setIsSubmitting(true);
+      try {
+        console.log('CreateScenarioModal: validation passed, submitting form');
+        await onSubmit(formData);
+        onClose();
+      } catch (error) {
+        console.error("CreateScenarioModal: onSubmit failed", error);
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
       console.log('CreateScenarioModal: validation failed, not submitting');
     }
   };
+
+  useEffect(() => {
+    const newInitialValues = {
+      name: '',
+      description: '',
+      destinationCountry: household?.destinationCountry || ('PT' as CountryCode),
+    };
+    setFormData(newInitialValues);
+  }, [household, isOpen]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
@@ -113,38 +122,20 @@ export const CreateScenarioModal: React.FC<CreateScenarioModalProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="form-control w-full">
-              <label className="label">
-                <span className="label-text">Origin Country</span>
-              </label>
-              <Select
-                name="originCountry"
-                value={formData.originCountry}
-                onChange={handleChange}
-                error={errors.originCountry}
-                options={Object.entries(COUNTRIES).map(([code, name]) => ({
-                  value: code,
-                  label: name as string
-                }))}
-              />
-            </div>
-
-            <div className="form-control w-full">
-              <label className="label">
-                <span className="label-text">Destination Country</span>
-              </label>
-              <Select
-                name="destinationCountry"
-                value={formData.destinationCountry}
-                onChange={handleChange}
-                error={errors.destinationCountry}
-                options={Object.entries(COUNTRIES).map(([code, name]) => ({
-                  value: code,
-                  label: name as string
-                }))}
-              />
-            </div>
+          <div className="form-control w-full md:col-span-2">
+            <label className="label">
+              <span className="label-text">Destination Country</span>
+            </label>
+            <Select
+              name="destinationCountry"
+              value={formData.destinationCountry}
+              onChange={handleChange}
+              error={errors.destinationCountry}
+              options={Object.entries(COUNTRIES).map(([code, name]) => ({
+                value: code,
+                label: name as string
+              }))}
+            />
           </div>
         </div>
 
@@ -152,8 +143,8 @@ export const CreateScenarioModal: React.FC<CreateScenarioModalProps> = ({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>
-            Create Scenario
+          <Button onClick={handleSubmit} disabled={isSubmitting} className={isSubmitting ? 'loading' : ''}>
+            {isSubmitting ? 'Creating...' : 'Create Scenario'}
           </Button>
         </div>
       </div>

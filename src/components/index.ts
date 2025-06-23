@@ -15,4 +15,4 @@ export * from './guards';
 
 // Export additional components
 export { default as Dashboard } from './Dashboard';
-export { CurrencyConverter } from './CurrencyConverter'; 
+// export { CurrencyConverter } from './CurrencyConverter'; // Temporarily commented out for build test 

@@ -1,0 +1,191 @@
+import { create } from 'zustand'
+import { devtools, persist, PersistStorage, StorageValue } from 'zustand/middleware'
+import { RootState, IncomeState, HousingState, EducationState, HealthcareState, TransportationState, LifestyleState, UtilitiesState, EmergencyState } from './types'
+import createProfileSlice from './slices/profileSlice'
+import createScenarioSlice from './slices/scenarioSlice'
+import { createFXSlice } from './slices/fxSlice'
+import { createUISlice } from './slices/uiSlice'
+import { CurrencyCode } from '@/types/base'; // CountryCode removed as it was unused
+import { StoreApi, SetState, GetState } from 'zustand'
+
+// Default initial states for slices without dedicated creators yet
+// These should be refined as actual slice creators are implemented
+
+const DEFAULT_INCOME_STATE: IncomeState = {
+  incomeSources: [],
+  primaryCurrency: CurrencyCode.USD, // Example default
+  totalIncome: null,
+  addIncomeSource: () => console.warn('addIncomeSource not implemented'),
+  updateIncomeSource: () => console.warn('updateIncomeSource not implemented'),
+  removeIncomeSource: () => console.warn('removeIncomeSource not implemented'),
+  setPrimaryCurrency: () => console.warn('setPrimaryCurrency not implemented'),
+};
+
+const DEFAULT_HOUSING_STATE: HousingState = {
+  selectedType: null,
+  expenses: null,
+  setHousingType: () => console.warn('setHousingType not implemented'),
+  updateHousingExpenses: () => console.warn('updateHousingExpenses not implemented'),
+  addInsurancePolicy: () => console.warn('addInsurancePolicy not implemented'),
+  removeInsurancePolicy: () => console.warn('removeInsurancePolicy not implemented'),
+  addUtilityExpense: () => console.warn('addUtilityExpense not implemented'),
+  removeUtilityExpense: () => console.warn('removeUtilityExpense not implemented'),
+};
+
+const DEFAULT_EDUCATION_STATE: EducationState = {
+  expenses: {},
+  setInstitutionType: () => console.warn('setInstitutionType not implemented'),
+  setProgramType: () => console.warn('setProgramType not implemented'),
+  updateEducationExpense: () => console.warn('updateEducationExpense not implemented'),
+  removeEducationExpense: () => console.warn('removeEducationExpense not implemented'),
+};
+
+const DEFAULT_HEALTHCARE_STATE: HealthcareState = {
+  selectedType: null,
+  expenses: {},
+  setHealthcareType: () => console.warn('setHealthcareType not implemented'),
+  updateHealthcareExpense: () => console.warn('updateHealthcareExpense not implemented'),
+  removeHealthcareExpense: () => console.warn('removeHealthcareExpense not implemented'),
+};
+
+const DEFAULT_TRANSPORTATION_STATE: TransportationState = {
+  selectedType: null,
+  expenses: null,
+  setTransportType: () => console.warn('setTransportType not implemented'),
+  updateTransportExpense: () => console.warn('updateTransportExpense not implemented'),
+};
+
+const DEFAULT_LIFESTYLE_STATE: LifestyleState = {
+  expenses: null,
+  addLifestyleExpense: () => console.warn('addLifestyleExpense not implemented'),
+  updateLifestyleExpense: () => console.warn('updateLifestyleExpense not implemented'),
+  removeLifestyleExpense: () => console.warn('removeLifestyleExpense not implemented'),
+};
+
+const DEFAULT_UTILITIES_STATE: UtilitiesState = {
+  expenses: null,
+  updateUtilityExpense: () => console.warn('updateUtilityExpense not implemented'),
+};
+
+const DEFAULT_EMERGENCY_STATE: EmergencyState = {
+  fund: null,
+  updateEmergencyFund: () => console.warn('updateEmergencyFund not implemented'),
+};
+
+// Define the custom storage implementation separately
+const customStorageImplementation: PersistStorage<RootState> = {
+  getItem: (name: string) => {
+    console.error('[CustomStorage VERY_TOP_LEVEL_CLIENT_CHECK] getItem called for:', name, 'Is window undefined?', typeof window === 'undefined');
+    if (typeof window === 'undefined') {
+      console.log(`[CustomStorage] getItem SKIPPED for ${name} (SSR)`);
+      return null; 
+    }
+    console.log(`[CustomStorage CLIENT] getItem called for ${name}`);
+    const str = localStorage.getItem(name);
+    if (!str) {
+      console.log(`[CustomStorage CLIENT] No item found for ${name}`);
+      return null;
+    }
+    console.log(`[CustomStorage CLIENT] Item found for ${name}:`, str.substring(0, 200) + '...');
+    try {
+      console.log(`[CustomStorage CLIENT] Attempting JSON.parse for ${name}...`);
+      const parsed = JSON.parse(str) as StorageValue<RootState>;
+      console.log(`[CustomStorage CLIENT] JSON.parse SUCCEEDED for ${name}. Returning parsed object:`, parsed);
+      return parsed;
+    } catch (e) {
+      console.error('[CustomStorage CLIENT] Error parsing JSON:', e);
+      return null; 
+    }
+  },
+  setItem: (name: string, value: StorageValue<RootState>) => {
+    console.error('[CustomStorage VERY_TOP_LEVEL_CLIENT_CHECK] setItem called for:', name, 'Is window undefined?', typeof window === 'undefined');
+    if (typeof window === 'undefined') {
+      console.log(`[CustomStorage] setItem skipped for ${name} (SSR)`);
+      return;
+    }
+    console.log(`[CustomStorage] setItem called for ${name} with value:`, value);
+    localStorage.setItem(name, JSON.stringify(value));
+  },
+  removeItem: (name: string) => {
+    console.error('[CustomStorage VERY_TOP_LEVEL_CLIENT_CHECK] removeItem called for:', name, 'Is window undefined?', typeof window === 'undefined');
+    if (typeof window === 'undefined') {
+      console.log(`[CustomStorage] removeItem skipped for ${name} (SSR)`);
+      return;
+    }
+    console.log(`[CustomStorage] removeItem called for ${name}`);
+    localStorage.removeItem(name);
+  },
+};
+
+
+/**
+ * Create the store with all slices
+ */
+export const useStore = create<RootState>()(
+  devtools(
+    persist(
+      (set: SetState<RootState>, get: GetState<RootState>, api: StoreApi<RootState>): RootState => {
+        console.log('[store/index.ts] Creating Zustand store slices...');
+        return {
+          profile: createProfileSlice(set, get, api),
+          ...createScenarioSlice(set, get, api),
+          fx: createFXSlice(set, get, api),
+          ui: createUISlice(set, get, api).ui,
+          income: DEFAULT_INCOME_STATE,
+          housing: DEFAULT_HOUSING_STATE,
+          education: DEFAULT_EDUCATION_STATE,
+          healthcare: DEFAULT_HEALTHCARE_STATE,
+          transportation: DEFAULT_TRANSPORTATION_STATE,
+          lifestyle: DEFAULT_LIFESTYLE_STATE,
+          utilities: DEFAULT_UTILITIES_STATE,
+          emergency: DEFAULT_EMERGENCY_STATE,
+        };
+      },
+      {
+        name: 'living-abroad-budget-store',
+        storage: customStorageImplementation,
+        onRehydrateStorage: (_state?: RootState | Partial<RootState>, error?: unknown) => { 
+          console.log('[store/index.ts] ON_REHYDRATE_STORAGE CALLED. Error:', error); 
+          
+          // More detailed logging for the profile portion
+          if (_state && (_state as RootState).profile) {
+            const rehydratedProfile = (_state as RootState).profile;
+            console.log('[store/index.ts] Rehydrated profile slice from _state:', rehydratedProfile);
+            console.log('[store/index.ts] Rehydrated profile.household from _state:', rehydratedProfile.household);
+            console.log('[store/index.ts] Rehydrated profile.isComplete from _state:', rehydratedProfile.isComplete);
+            console.log('[store/index.ts] Rehydrated profile.isHydrated from _state (before setHydrated):', rehydratedProfile.isHydrated);
+          } else {
+            console.log('[store/index.ts] _state or _state.profile is null/undefined during onRehydrateStorage.');
+          }
+
+          if (error) {
+            console.error('[store/index.ts] An error occurred during hydration:', error);
+          } else {
+            console.log('[store/index.ts] Hydration presumed complete. Attempting to set hydrated flag via profile.setHydrated().');
+            if (typeof window !== 'undefined') {
+              queueMicrotask(() => {
+                const storeApi = useStore.getState();
+                if (storeApi.profile && typeof storeApi.profile.setHydrated === 'function') {
+                  console.log('[store/index.ts] Calling profile.setHydrated() via useStore.getState().profile.setHydrated()');
+                  storeApi.profile.setHydrated();
+                  const updatedProfileState = useStore.getState().profile;
+                  console.log('[store/index.ts] Profile state AFTER calling setHydrated. isHydrated:', updatedProfileState.isHydrated);
+                } else {
+                  console.error('[store/index.ts] storeApi.profile.setHydrated is not a function or profile slice is missing.');
+                }
+              });
+            } else {
+              console.log('[store/index.ts] Skipping setHydrated during build/SSR as window is not defined (from onRehydrateStorage).');
+            }
+          }
+        },
+      }
+    )
+  )
+);
+
+// Export types for use in components
+export * from './types'
+
+// Export hooks for accessing state in components
+export * from './hooks' 

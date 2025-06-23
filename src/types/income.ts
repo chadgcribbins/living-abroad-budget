@@ -1,11 +1,22 @@
 import { FrequencyType, Identifiable, Money, Timestamped } from './base';
 
 /**
+ * General income types
+ */
+export enum IncomeType {
+  EMPLOYMENT = 'EMPLOYMENT',
+  PASSIVE = 'PASSIVE',
+  ONE_OFF = 'ONE_OFF',
+  OTHER = 'OTHER',
+}
+
+/**
  * Base interface for all income sources
  */
 export interface IncomeSource extends Identifiable, Timestamped {
   name: string;
   description?: string;
+  type: IncomeType;
   amount: Money;
   frequency: FrequencyType;
   isActive: boolean;
@@ -28,7 +39,8 @@ export enum EmploymentType {
  * Employment-specific income details
  */
 export interface EmploymentIncome extends IncomeSource {
-  type: EmploymentType;
+  type: IncomeType.EMPLOYMENT;
+  employmentType: EmploymentType;
   employer: string;
   benefits?: EmploymentBenefit[];
   bonuses?: Bonus[];
@@ -83,7 +95,8 @@ export enum PassiveIncomeType {
  * Passive income details
  */
 export interface PassiveIncome extends IncomeSource {
-  type: PassiveIncomeType;
+  type: IncomeType.PASSIVE;
+  passiveType: PassiveIncomeType;
   source: string;
   reliability: number; // 0-1 representing income stability
 }

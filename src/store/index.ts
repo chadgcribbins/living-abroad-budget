@@ -1,104 +1,96 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
-import { RootState, IncomeState, HousingState, EducationState, HealthcareState, TransportationState, LifestyleState, UtilitiesState, EmergencyState } from './types'
+import { RootState } from './types'
 import createProfileSlice from './slices/profileSlice'
 import createScenarioSlice from './slices/scenarioSlice'
 import { createFXSlice } from './slices/fxSlice'
 import { createUISlice } from './slices/uiSlice'
 
-// Import other slice creators
-// These will be created as needed for each domain
-// import { createIncomeSlice } from './slices/incomeSlice'
-// import { createHousingSlice } from './slices/housingSlice'
-// etc.
-
 /**
- * Create the store with all slices
+ * Clean store with only the working features for PRD-v7:
+ * - Profile & household management ✅
+ * - Scenario creation & comparison ✅ (primary feature)
+ * - FX for multi-currency support ✅
+ * - UI state management ✅
+ * 
+ * Removed unused placeholder slices:
+ * - Income, Housing, Education, Healthcare, Transportation, Lifestyle, Utilities, Emergency
+ * These will be added back properly when implemented for real
  */
 export const useStore = create<RootState>()(
   devtools(
     persist(
       (set, get, api): RootState => {
-        console.log('Creating Zustand store...');
+        // Clean store creation for PRD-v7 core features
         
-        // Create slice instances
-        const scenarioSliceInstance = createScenarioSlice(set, get, api);
-        const profileSliceInstance = createProfileSlice(set, get, api);
+        // Create the working slices
+        const profileSlice = createProfileSlice(set, get, api);
+        const scenarioSlice = createScenarioSlice(set, get, api);
+        const fxSlice = createFXSlice(set, get, api);
+        const uiSlice = createUISlice(set, get, api);
         
-        console.log('[store/index.ts] Creating fxSlice instance...');
-        const fxSliceInstance = createFXSlice(set, get, api);
-
-        console.log('[store/index.ts] Creating uiSlice instance...');
-        const uiSliceFull = createUISlice(set, get, api);
-
-        // TODO: Create instances for other slices (income, housing, etc.)
-
-        // Explicitly construct the RootState object
-        const rootStateResult: RootState = {
-          // --- Profile Slice --- 
-          profile: profileSliceInstance,
-
-          // --- Scenario Slice (Flattened) --- 
-          scenarios: scenarioSliceInstance.scenarios,
-          activeScenarioId: scenarioSliceInstance.activeScenarioId,
-          isLoading: scenarioSliceInstance.isLoading,
-          error: scenarioSliceInstance.error,
-          storageStats: scenarioSliceInstance.storageStats,
-          activeScenario: scenarioSliceInstance.activeScenario,
-          scenarioList: scenarioSliceInstance.scenarioList,
-          loadScenarios: scenarioSliceInstance.loadScenarios,
-          setActiveScenarioId: scenarioSliceInstance.setActiveScenarioId,
-          createScenario: scenarioSliceInstance.createScenario,
-          updateScenario: scenarioSliceInstance.updateScenario,
-          deleteScenario: scenarioSliceInstance.deleteScenario,
-          duplicateScenario: scenarioSliceInstance.duplicateScenario,
-          exportScenarios: scenarioSliceInstance.exportScenarios,
-          importScenarios: scenarioSliceInstance.importScenarios,
-          createTemplateScenario: scenarioSliceInstance.createTemplateScenario,
-          refreshStorageStats: scenarioSliceInstance.refreshStorageStats,
-          scheduleAutoSave: scenarioSliceInstance.scheduleAutoSave,
-          fromActiveScenario: scenarioSliceInstance.fromActiveScenario,
+        // Return only the working features
+        return {
+          // Profile management
+          profile: profileSlice,
           
-          // --- UI Slice --- 
-          ui: uiSliceFull.ui,
+          // Scenario management (core PRD-v7 feature)
+          scenarios: scenarioSlice.scenarios,
+          activeScenarioId: scenarioSlice.activeScenarioId,
+          isLoading: scenarioSlice.isLoading,
+          error: scenarioSlice.error,
+          storageStats: scenarioSlice.storageStats,
+          activeScenario: scenarioSlice.activeScenario,
+          scenarioList: scenarioSlice.scenarioList,
+          loadScenarios: scenarioSlice.loadScenarios,
+          setActiveScenarioId: scenarioSlice.setActiveScenarioId,
+          createScenario: scenarioSlice.createScenario,
+          updateScenario: scenarioSlice.updateScenario,
+          deleteScenario: scenarioSlice.deleteScenario,
+          duplicateScenario: scenarioSlice.duplicateScenario,
+          exportScenarios: scenarioSlice.exportScenarios,
+          importScenarios: scenarioSlice.importScenarios,
+          createTemplateScenario: scenarioSlice.createTemplateScenario,
+          refreshStorageStats: scenarioSlice.refreshStorageStats,
+          scheduleAutoSave: scenarioSlice.scheduleAutoSave,
+          fromActiveScenario: scenarioSlice.fromActiveScenario,
           
-          // --- Other Slices (Placeholders - Replace with actual instances or defaults) ---
-          income: {} as IncomeState, 
-          housing: {} as HousingState,
-          education: {} as EducationState,
-          healthcare: {} as HealthcareState,
-          transportation: {} as TransportationState,
-          lifestyle: {} as LifestyleState,
-          utilities: {} as UtilitiesState,
-          emergency: {} as EmergencyState,
-          fx: fxSliceInstance, 
+          // FX management
+          fx: fxSlice,
+          
+          // UI management
+          ui: uiSlice.ui,
         };
-
-        return rootStateResult;
       },
       {
-        name: 'living-abroad-budget',
-        partialize: (state) => ({
-          profile: state.profile,
-          scenarios: state.scenarios,
-          activeScenarioId: state.activeScenarioId,
-          ui: state.ui,
-          income: state.income,
-          housing: state.housing,
-          education: state.education,
-          healthcare: state.healthcare,
-          transportation: state.transportation,
-          lifestyle: state.lifestyle,
-          utilities: state.utilities,
-          emergency: state.emergency,
-        }),
+        name: 'living-abroad-budget-store',
+        // Clean persistence - no complex custom implementation
+        onRehydrateStorage: () => {
+          // Hydration handler
+          return (state, error) => {
+            if (error) {
+              console.error('[store] Hydration error:', error);
+            } else {
+              // Hydration complete
+              // Set hydration flag on client
+              if (typeof window !== 'undefined') {
+                setTimeout(() => {
+                  if (state?.profile?.setHydrated) {
+                    state.profile.setHydrated();
+                  }
+                }, 0);
+              }
+            }
+          };
+        },
       }
-    )
+    ),
+    {
+      name: 'living-abroad-budget-devtools',
+    }
   )
-)
+);
 
-// Export types for use in components
-export * from './types'
-
-// Export hooks for accessing state in components
-export * from './hooks' 
+// Export types for components
+export type { RootState } from './types'
+export * from './types' 

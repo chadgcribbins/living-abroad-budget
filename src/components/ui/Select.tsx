@@ -86,7 +86,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>((
       )}
       <select className={selectClasses} {...props} ref={ref}>
         {placeholder && (
-          <option value="" disabled selected={!props.value}>
+          <option value="" disabled>
             {placeholder}
           </option>
         )}

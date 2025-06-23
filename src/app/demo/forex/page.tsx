@@ -1,8 +1,17 @@
 'use client';
 
-import { CurrencyConverter } from '@/components/CurrencyConverter';
 import { CurrencyCode } from '@/types/base';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+// Dynamically import CurrencyConverter with SSR turned off
+const DynamicCurrencyConverter = dynamic(
+  () => import('@/components/CurrencyConverter').then(mod => mod.CurrencyConverter),
+  {
+    ssr: false,
+    loading: () => <p className="text-center p-4">Loading currency converter...</p>
+  }
+);
 
 export default function ForexDemoPage() {
   return (
@@ -44,20 +53,22 @@ export default function ForexDemoPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <h2 className="text-xl font-semibold mb-3">USD to EUR Converter</h2>
-          <CurrencyConverter 
+          {/* <DynamicCurrencyConverter 
             initialAmount={100} 
             initialFromCurrency={CurrencyCode.USD} 
             initialToCurrency={CurrencyCode.EUR} 
-          />
+          /> */}
+          <p className="text-gray-500 p-4 bg-gray-100 rounded">Currency Converter temporarily commented out for build test.</p>
         </div>
         
         <div>
           <h2 className="text-xl font-semibold mb-3">GBP to EUR Converter</h2>
-          <CurrencyConverter 
+          {/* <DynamicCurrencyConverter 
             initialAmount={100} 
             initialFromCurrency={CurrencyCode.GBP} 
             initialToCurrency={CurrencyCode.EUR} 
-          />
+          /> */}
+          <p className="text-gray-500 p-4 bg-gray-100 rounded">Currency Converter temporarily commented out for build test.</p>
         </div>
       </div>
       
